@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
 
-from neural_networks.feedforward import VariationalAE
+from neural_blueprints.feedforward import VariationalAE
 
 
 def main():

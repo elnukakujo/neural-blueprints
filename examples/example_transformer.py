@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from neural_networks.transformer import GPT
+from neural_blueprints.transformer import GPT
 
 
 def create_dummy_data(vocab_size=1000, seq_len=50, num_samples=10000):

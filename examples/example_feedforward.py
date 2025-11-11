@@ -4,8 +4,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-from neural_networks.feedforward import FeedForwardNN
-from neural_networks.utils import Trainer
+from neural_blueprints.feedforward import FeedForwardNN
+from neural_blueprints.utils import Trainer
 
 
 def main():
