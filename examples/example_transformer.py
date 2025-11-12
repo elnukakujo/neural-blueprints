@@ -23,8 +23,13 @@ def main():
     
     # Create dummy data
     train_data = create_dummy_data(vocab_size, seq_len, 10000)
-    train_dataset = TensorDataset(train_data[:-1].transpose(0, 1), 
-                                   train_data[1:].transpose(0, 1))
+    
+    # Create input-target pairs for next token prediction
+    # Input: all tokens except last, Target: all tokens except first
+    inputs = train_data[:, :-1]   # (10000, 49)
+    targets = train_data[:, 1:]   # (10000, 49)
+    
+    train_dataset = TensorDataset(inputs, targets)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     
     # Create GPT model
