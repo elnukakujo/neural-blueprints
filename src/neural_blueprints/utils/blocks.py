@@ -61,5 +61,7 @@ def get_block(block_type: str, block_config: BaseModel) -> nn.Module:
     elif block_type == 'discriminator':
         from ..components.composite import Discriminator
         return Discriminator(block_config)
+    elif block_type == 'flatten':
+        return nn.Flatten()
     else:
         raise ValueError(f"Unsupported block type: {block_type}")

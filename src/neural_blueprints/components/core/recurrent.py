@@ -21,6 +21,6 @@ class RecurrentUnit(nn.Module):
         else:
             raise ValueError(f"Unsupported rnn_type: {self.rnn_type}. Supported types: 'LSTM', 'GRU', 'RNN'.")
 
-    def forward(self, x: torch.Tensor, hidden=None) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor, hidden: torch.Tensor = None) -> tuple[torch.Tensor, torch.Tensor]:
         output, hidden = self.rnn(x, hidden)
         return output, hidden

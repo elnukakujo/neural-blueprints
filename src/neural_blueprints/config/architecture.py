@@ -55,3 +55,44 @@ class RNNConfig(BaseModel):
         if self.final_activation is not None and self.final_activation.lower() not in ('relu', 'tanh', 'sigmoid', 'gelu'):
             raise ValueError(f"Unsupported final_activation: {self.final_activation}. Supported: {'relu', 'tanh', 'sigmoid', 'gelu'}")
         return self
+    
+class AutoEncoderConfig(BaseModel):
+    """Configuration for an AutoEncoder architecture."""
+
+    encoder_layer_types: List[str]
+    encoder_layer_configs: List[BaseModel]
+    decoder_layer_types: List[str]
+    decoder_layer_configs: List[BaseModel]
+
+    @model_validator(mode='after')
+    def _validate(self):
+        if len(self.encoder_layer_types) != len(self.encoder_layer_configs):
+            raise ValueError("Length of encoder_layer_types must match length of encoder_layer_configs")
+        if len(self.decoder_layer_types) != len(self.decoder_layer_configs):
+            raise ValueError("Length of decoder_layer_types must match length of decoder_layer_configs")
+        return self
+    
+class VariationalAutoEncoderConfig(AutoEncoderConfig):
+    """Configuration for a Variational AutoEncoder (VAE) architecture."""
+
+    reconstruction_factor: float = Field(1.0, ge=0.0)
+    kl_divergence_factor: float = Field(1.0, ge=0.0)
+
+    @model_validator(mode='after')
+    def _validate(self):
+        if self.reconstruction_factor < 0.0:
+            raise ValueError("reconstruction_factor must be non-negative")
+        if self.kl_divergence_factor < 0.0:
+            raise ValueError("kl_divergence_factor must be non-negative")
+
+        return self
+    
+class GANConfig(BaseModel):
+    """Configuration for a Generative Adversarial Network (GAN) architecture."""
+
+    generator_config: BaseModel
+    discriminator_config: BaseModel
+
+    @model_validator(mode='after')
+    def _validate(self):
+        return self

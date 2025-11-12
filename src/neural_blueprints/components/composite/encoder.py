@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from ...config import EncoderConfig
+from ...config import EncoderConfig, TransformerEncoderConfig
 from ...utils import get_block, get_activation
 
 class Encoder(nn.Module):
@@ -30,4 +30,46 @@ class Encoder(nn.Module):
         self.network = nn.Sequential(*self.layers)
                 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.network(x)
+    
+class TransformerEncoder(nn.Module):
+    def __init__(self, config: TransformerEncoderConfig):
+        super().__init__()
+        self.input_dim = config.input_dim
+        self.hidden_dim = config.hidden_dim
+        self.num_layers = config.num_layers
+        self.num_heads = config.num_heads
+        self.dropout = config.dropout
+        self.final_activation = config.final_activation
+
+        self.layers = nn.ModuleList()
+
+        # Optional input projection if input_dim != hidden_dim
+        if self.input_dim != self.hidden_dim:
+            self.layers.append(nn.Linear(self.input_dim, self.hidden_dim))
+
+        self.layers.append(nn.Transpose(0, 1))  # (seq_len, batch_size, hidden_dim)
+
+        # Transformer encoder layers
+        for _ in range(self.num_layers):
+            self.layers.append(
+                nn.TransformerEncoderLayer(
+                    d_model=self.hidden_dim,
+                    nhead=self.num_heads,
+                    dim_feedforward=self.hidden_dim * 4,
+                    dropout=self.dropout,
+                    activation='relu'
+                )
+            )
+
+        self.layers.append(nn.Transpose(0, 1))  # back to (batch_size, seq_len, hidden_dim)
+
+        self.layers.append(get_activation(self.final_activation))
+
+        self.network = nn.Sequential(*self.layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x: (batch_size, seq_len, input_dim)
+        """
         return self.network(x)

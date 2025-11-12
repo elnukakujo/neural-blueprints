@@ -19,7 +19,7 @@ class CNN(nn.Module):
 
         for layer_type, layer_config in zip(self.layer_types, self.layer_configs):
             self.layers.append(get_block(layer_type, layer_config))
-        self.layers.append(nn.Flatten())
+            
         self.layers.append(
             FeedForwardNetwork(
                 self.feedforward_config
