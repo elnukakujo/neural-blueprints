@@ -5,6 +5,7 @@ from .recurrent import RecurrentUnit
 from .attention import AttentionLayer
 from .residual import ResidualLayer
 from .embedding import EmbeddingLayer, PatchEmbeddingLayer
+from .pool import Pooling1dLayer, Pooling2dLayer
 
 __all__ = [
     DenseLayer,
@@ -16,5 +17,7 @@ __all__ = [
     AttentionLayer,
     ResidualLayer,
     EmbeddingLayer,
-    PatchEmbeddingLayer
+    PatchEmbeddingLayer,
+    Pooling1dLayer,
+    Pooling2dLayer
 ]

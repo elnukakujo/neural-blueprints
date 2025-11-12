@@ -78,18 +78,18 @@ class RecurrentUnitConfig(BaseModel):
         num_layers (int): Number of recurrent layers.
         bidirectional (bool): If True, becomes a bidirectional RNN.
     """
-    input_size: int
-    hidden_size: int
+    input_dim: int
+    hidden_dim: int
     num_layers: int = 1
     rnn_type: str = 'RNN'
     bidirectional: bool = False
 
     @model_validator(mode='after')
     def _validate(self):
-        if self.input_size <= 0:
-            raise ValueError("input_size must be a positive integer")
-        if self.hidden_size <= 0:
-            raise ValueError("hidden_size must be a positive integer")
+        if self.input_dim <= 0:
+            raise ValueError("input_dim must be a positive integer")
+        if self.hidden_dim <= 0:
+            raise ValueError("hidden_dim must be a positive integer")
         if self.num_layers <= 0:
             raise ValueError("num_layers must be a positive integer")
         if self.rnn_type.upper() not in ('LSTM', 'GRU', 'RNN'):
@@ -165,4 +165,26 @@ class PatchEmbeddingLayerConfig(BaseModel):
             raise ValueError("patch_size must be a positive integer")
         if self.in_channels <= 0:
             raise ValueError("in_channels must be a positive integer")
+        return self
+    
+class PoolingLayerConfig(BaseModel):
+    """Configuration for a pooling layer.
+    
+    Args:
+        pool_type (str): Type of pooling. Options: 'max', 'avg'.
+        kernel_size (int): Size of the pooling kernel.
+        stride (int): Stride of the pooling operation.
+    """
+    pool_type: str
+    kernel_size: int
+    stride: int
+
+    @model_validator(mode='after')
+    def _validate(self):
+        if self.pool_type.lower() not in ('max', 'avg'):
+            raise ValueError(f"Unsupported pool_type: {self.pool_type}. Supported types: 'max', 'avg'")
+        if self.kernel_size <= 0:
+            raise ValueError("kernel_size must be a positive integer")
+        if self.stride <= 0:
+            raise ValueError("stride must be a positive integer")
         return self

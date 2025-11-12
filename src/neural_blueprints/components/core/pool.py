@@ -1,0 +1,23 @@
+import torch
+import torch.nn as nn
+
+from ...config import PoolingLayerConfig
+
+class Pooling2dLayer(nn.Module):
+    """A 2D pooling layer that supports different pooling types."""
+    def __init__(self, config: PoolingLayerConfig):
+        super(Pooling2dLayer, self).__init__()
+
+        self.pool = nn.MaxPool2d(kernel_size=config.kernel_size, stride=config.stride) if config.pool_type == 'max' else nn.AvgPool2d(kernel_size=config.kernel_size, stride=config.stride)
+
+    def forward(self, x):
+        return self.pool(x)
+    
+class Pooling1dLayer(nn.Module):
+    """A 1D pooling layer that supports different pooling types."""
+    def __init__(self, config: PoolingLayerConfig):
+        super(Pooling1dLayer, self).__init__()
+        self.pool = nn.MaxPool1d(kernel_size=config.kernel_size, stride=config.stride) if config.pool_type.lower() == 'max' else nn.AvgPool1d(kernel_size=config.kernel_size, stride=config.stride)
+
+    def forward(self, x):
+        return self.pool(x)

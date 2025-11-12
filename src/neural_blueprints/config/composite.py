@@ -26,6 +26,8 @@ class EncoderConfig(BaseModel):
 
     layer_types: List[str]
     layer_configs: List[BaseModel]
+    projection_dim: Optional[int] = None
+    final_activation: Optional[str] = None
 
     @model_validator(mode='after')
     def _validate(self):
@@ -35,6 +37,10 @@ class EncoderConfig(BaseModel):
         for layer_type in self.layer_types:
             if layer_type.lower() not in supported_layers:
                 raise ValueError(f"Unsupported layer type: {layer_type}. Supported types: {supported_layers}")
+        if self.projection_dim is not None and self.projection_dim <= 0:
+            raise ValueError("projection_dim must be a positive integer if specified")
+        if self.final_activation is not None and self.final_activation.lower() not in ('relu', 'tanh', 'sigmoid', 'softmax', 'gelu'):
+            raise ValueError(f"Unsupported final_activation: {self.final_activation}. Supported: {'relu', 'tanh', 'sigmoid', 'softmax', 'gelu'}")
         return self
     
 class DecoderConfig(BaseModel):
@@ -42,6 +48,8 @@ class DecoderConfig(BaseModel):
 
     layer_types: List[str]
     layer_configs: List[BaseModel]
+    projection_dim: Optional[int] = None
+    final_activation: Optional[str] = None
 
     @model_validator(mode='after')
     def _validate(self):
@@ -51,19 +59,16 @@ class DecoderConfig(BaseModel):
         for layer_type in self.layer_types:
             if layer_type.lower() not in supported_layers:
                 raise ValueError(f"Unsupported layer type: {layer_type}. Supported types: {supported_layers}")
+        if self.projection_dim is not None and self.projection_dim <= 0:
+            raise ValueError("projection_dim must be a positive integer if specified")
+        if self.final_activation is not None and self.final_activation.lower() not in ('relu', 'tanh', 'sigmoid', 'softmax', 'gelu'):
+            raise ValueError(f"Unsupported final_activation: {self.final_activation}. Supported: {'relu', 'tanh', 'sigmoid', 'softmax', 'gelu'}")
         return self
     
-class GeneratorConfig(BaseModel):
+class GeneratorConfig(DecoderConfig):
     """Configuration for a generator model."""
+    pass
     
-    latent_dim: int
-    output_shape: Tuple[int, ...]
-    architecture: DecoderConfig
-
-    @model_validator(mode='after')
-    def _validate(self):
-        if self.latent_dim <= 0:
-            raise ValueError("latent_dim must be a positive integer")
-        if not all(dim > 0 for dim in self.output_shape):
-            raise ValueError("All dimensions in output_shape must be positive integers")
-        return self
+class DiscriminatorConfig(EncoderConfig):
+    """Configuration for a discriminator model."""
+    pass

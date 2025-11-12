@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from ...config import ConvLayerConfig
+from ...utils import get_activation
 
 class BaseConvLayer(nn.Module):
     def __init__(self, config: ConvLayerConfig):
@@ -40,21 +41,8 @@ class Conv2dLayer(BaseConvLayer):
         ]
 
         layers.append(nn.BatchNorm2d(self.out_channels)) if self.batch_norm else None
-
-        if self.activation:
-            act = self.activation.lower()
-            if act == "relu":
-                layers.append(nn.ReLU(inplace=True))
-            elif act == "leakyrelu":
-                layers.append(nn.LeakyReLU(inplace=True))
-            elif act == "silu":
-                layers.append(nn.SiLU(inplace=True))
-            elif act == "gelu":
-                layers.append(nn.GELU())
-            elif act == "relu6":
-                layers.append(nn.ReLU6(inplace=True))
-            else:
-                raise ValueError(f"Unsupported activation: {self.activation}")
+        layers.append(get_activation(self.activation))
+        
 
         self.conv = nn.Sequential(*layers)
 
@@ -100,25 +88,8 @@ class Conv1dLayer(BaseConvLayer):
         ]
 
         layers.append(nn.BatchNorm1d(self.out_channels)) if self.batch_norm else None
-
-        if self.activation:
-            act = self.activation.lower()
-            if act == "relu":
-                layers.append(nn.ReLU(inplace=True))
-            elif act == "leakyrelu":
-                layers.append(nn.LeakyReLU(inplace=True))
-            elif act == "elu":
-                layers.append(nn.ELU(inplace=True))
-            elif act == "silu":
-                layers.append(nn.SiLU(inplace=True))
-            elif act == "gelu":
-                layers.append(nn.GELU())
-            elif act == "sigmoid":
-                layers.append(nn.Sigmoid())
-            elif act == "tanh":
-                layers.append(nn.Tanh())
-            else:
-                raise ValueError(f"Unsupported activation: {self.activation}")
+        layers.append(get_activation(self.activation))
+        
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -147,21 +118,8 @@ class Conv2dTransposeLayer(BaseConvLayer):
         ]
 
         layers.append(nn.BatchNorm2d(self.out_channels)) if self.batch_norm else None
-
-        if self.activation:
-            act = self.activation.lower()
-            if act == "relu":
-                layers.append(nn.ReLU(inplace=True))
-            elif act == "leakyrelu":
-                layers.append(nn.LeakyReLU(inplace=True))
-            elif act == "silu":
-                layers.append(nn.SiLU(inplace=True))
-            elif act == "gelu":
-                layers.append(nn.GELU())
-            elif act == "relu6":
-                layers.append(nn.ReLU6(inplace=True))
-            else:
-                raise ValueError(f"Unsupported activation: {self.activation}")
+        layers.append(get_activation(self.activation))
+        
 
         self.conv = nn.Sequential(*layers)
 
@@ -207,25 +165,8 @@ class Conv1dTransposeLayer(BaseConvLayer):
         ]
 
         layers.append(nn.BatchNorm1d(self.out_channels)) if self.batch_norm else None
-
-        if self.activation:
-            act = self.activation.lower()
-            if act == "relu":
-                layers.append(nn.ReLU(inplace=True))
-            elif act == "leakyrelu":
-                layers.append(nn.LeakyReLU(inplace=True))
-            elif act == "elu":
-                layers.append(nn.ELU(inplace=True))
-            elif act == "silu":
-                layers.append(nn.SiLU(inplace=True))
-            elif act == "gelu":
-                layers.append(nn.GELU())
-            elif act == "sigmoid":
-                layers.append(nn.Sigmoid())
-            elif act == "tanh":
-                layers.append(nn.Tanh())
-            else:
-                raise ValueError(f"Unsupported activation: {self.activation}")
+        layers.append(get_activation(self.activation))
+        
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

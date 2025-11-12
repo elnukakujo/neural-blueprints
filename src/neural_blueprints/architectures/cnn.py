@@ -1,33 +1,33 @@
 import torch
 import torch.nn as nn
 
-from ...config import EncoderConfig
-from ...utils import get_block, get_activation
+from ..components.composite import FeedForwardNetwork
+from ..config import CNNConfig
+from ..utils import get_activation, get_block
 
-class Encoder(nn.Module):
-    def __init__(self, config: EncoderConfig):
-        super(Encoder, self).__init__()
-
+class CNN(nn.Module):
+    """A simple Convolutional Neural Network (CNN) architecture."""
+    def __init__(self, config: CNNConfig):
+        super(CNN, self).__init__()
         self.layer_types = config.layer_types
         self.layer_configs = config.layer_configs
-        self.projection_dim = config.projection_dim
         self.final_activation = config.final_activation
-
-        input_dim = self.layer_configs[0].input_dim if self.layer_configs else None
+        self.feedforward_config = config.feedforward_config
 
         # Build the main generator body using the same modular layer system as Decoder
         self.layers = nn.ModuleList()
 
-        # Optional linear projection from latent space to the first hidden dimension
-        if self.projection_dim is not None:
-            self.layers.append(nn.Linear(input_dim, self.projection_dim))
-
         for layer_type, layer_config in zip(self.layer_types, self.layer_configs):
             self.layers.append(get_block(layer_type, layer_config))
-
+        self.layers.append(nn.Flatten())
+        self.layers.append(
+            FeedForwardNetwork(
+                self.feedforward_config
+            )
+        )
         self.layers.append(get_activation(self.final_activation))
 
         self.network = nn.Sequential(*self.layers)
-                
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.network(x)
