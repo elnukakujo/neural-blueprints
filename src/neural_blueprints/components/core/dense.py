@@ -3,6 +3,15 @@ import torch.nn as nn
 from ...config import DenseLayerConfig
 
 class DenseLayer(nn.Module):
+    """A fully connected dense layer with optional activation.
+    
+    Args:
+        config (DenseLayerConfig): Configuration for the dense layer.
+            - input_dim (int): Size of each input sample.
+            - output_dim (int): Size of each output sample.
+            - activation (str, optional): Activation function to apply. 
+              Supported: 'relu', 'tanh', 'sigmoid', 'gelu'. Default is None (no activation).
+    """
     def __init__(self, config: DenseLayerConfig):
         super(DenseLayer, self).__init__()
         self.linear = nn.Linear(config.input_dim, config.output_dim)
@@ -17,6 +26,8 @@ class DenseLayer(nn.Module):
             return nn.Tanh()
         elif activation.lower() == 'sigmoid':
             return nn.Sigmoid()
+        elif activation.lower() == 'gelu':
+            return nn.GELU()
         else:
             raise ValueError(f"Unsupported activation: {activation}")
 

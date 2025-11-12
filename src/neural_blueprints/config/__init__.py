@@ -1,7 +1,7 @@
 """Init file for config schemas module."""
-from .architecture import *
-from .composite import *
 from .core import DenseLayerConfig, ConvLayerConfig, RecurrentUnitConfig, AttentionLayerConfig, ResidualLayerConfig, EmbeddingLayerConfig, PatchEmbeddingLayerConfig
+from .composite import FeedForwardNetworkConfig, EncoderConfig, DecoderConfig, GeneratorConfig, DiscriminatorConfig
+from .architecture import *
 
 __all__ = [
     DenseLayerConfig,
@@ -11,4 +11,9 @@ __all__ = [
     ResidualLayerConfig,
     EmbeddingLayerConfig,
     PatchEmbeddingLayerConfig,
+    FeedForwardNetworkConfig,
+    EncoderConfig,
+    DecoderConfig,
+    GeneratorConfig,
+    DiscriminatorConfig,
 ]

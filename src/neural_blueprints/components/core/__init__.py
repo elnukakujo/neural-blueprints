@@ -1,4 +1,4 @@
-"""Init file for config schemas module."""
+"""Init file for core components module."""
 from .dense import DenseLayer
 from .conv import Conv1dLayer, Conv2dLayer, Conv1dTransposeLayer, Conv2dTransposeLayer
 from .recurrent import RecurrentUnit
