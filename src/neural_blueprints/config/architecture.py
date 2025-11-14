@@ -1,4 +1,5 @@
 from typing import List, Tuple, Optional, Any, Dict
+from ..config.composite import GeneratorConfig, DiscriminatorConfig, TransformerDecoderConfig, TransformerEncoderConfig
 from pydantic import BaseModel, model_validator, Field
 
 class MLPConfig(BaseModel):
@@ -7,6 +8,7 @@ class MLPConfig(BaseModel):
     input_dim: int
     hidden_dims: List[int]
     output_dim: int
+    normalization: Optional[str] = None
     activation: Optional[str] = None
     final_activation: Optional[str] = None
 
@@ -27,18 +29,18 @@ class MLPConfig(BaseModel):
 class CNNConfig(BaseModel):
     """Configuration for a Convolutional Neural Network (CNN) architecture."""
 
-    final_activation: Optional[str] = None
     layer_types: List[str]
     layer_configs: List[BaseModel]
     feedforward_config: BaseModel
+    final_activation: Optional[str] = None
 
     @model_validator(mode='after')
     def _validate(self):
-        if self.final_activation is not None and self.final_activation.lower() not in ('relu', 'tanh', 'sigmoid', 'gelu'):
-            raise ValueError(f"Unsupported final_activation: {self.final_activation}. Supported: {'relu', 'tanh', 'sigmoid', 'gelu'}")
+        if self.final_activation is not None and self.final_activation.lower() not in ('relu', 'tanh', 'sigmoid', 'gelu', 'softmax'):
+            raise ValueError(f"Unsupported final_activation: {self.final_activation}. Supported: {'relu', 'tanh', 'sigmoid', 'gelu', 'softmax'}")
         for layer_type in self.layer_types:
-            if layer_type.lower() not in ('conv1d', 'conv2d', 'pool1d', 'pool2d'):
-                raise ValueError(f"Unsupported layer type: {layer_type}. Supported types: {'conv1d', 'conv2d', 'pool1d', 'pool2d'}")
+            if layer_type.lower() not in ('conv1d', 'conv2d', 'pool1d', 'pool2d', 'flatten'):
+                raise ValueError(f"Unsupported layer type: {layer_type}. Supported types: {'conv1d', 'conv2d', 'pool1d', 'pool2d', 'flatten'}")
         return self
     
 class RNNConfig(BaseModel):
@@ -90,8 +92,19 @@ class VariationalAutoEncoderConfig(AutoEncoderConfig):
 class GANConfig(BaseModel):
     """Configuration for a Generative Adversarial Network (GAN) architecture."""
 
-    generator_config: BaseModel
-    discriminator_config: BaseModel
+    generator_config: GeneratorConfig
+    discriminator_config: DiscriminatorConfig
+
+    @model_validator(mode='after')
+    def _validate(self):
+        return self
+
+class TransformerConfig(BaseModel):
+    """Configuration for a Transformer architecture."""
+
+    encoder_config: TransformerEncoderConfig
+    decoder_config: TransformerDecoderConfig
+    output_dim: Optional[int] = None
 
     @model_validator(mode='after')
     def _validate(self):

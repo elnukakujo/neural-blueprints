@@ -2,30 +2,31 @@ import torch
 import torch.nn as nn
 
 from ..components.composite import Encoder, Decoder
-from ..config import AutoEncoderConfig, VariationalAutoEncoderConfig
+from ..config import AutoEncoderConfig, VariationalAutoEncoderConfig, EncoderConfig, DecoderConfig
 
 class AutoEncoder(nn.Module):
     """A simple AutoEncoder architecture."""
     def __init__(self, config: AutoEncoderConfig):
         super(AutoEncoder, self).__init__()
-        self.encoder_layer_types = config.encoder_config
-        self.encoder_layer_configs = config.encoder_layer_configs
-        self.decoder_layer_types = config.decoder_layer_types
-        self.decoder_layer_configs = config.decoder_layer_configs
-
+        self.config = config
 
         self.encoder = Encoder(
-            layer_types=self.encoder_layer_types,
-            layer_configs=self.encoder_layer_configs
+            config = EncoderConfig(
+                layer_types=config.encoder_layer_types,
+                layer_configs=config.encoder_layer_configs,
+            )
         )
 
         self.decoder = Decoder(
-            layer_types=self.decoder_layer_types,
-            layer_configs=self.decoder_layer_configs
+            config = DecoderConfig(
+                layer_types=config.decoder_layer_types,
+                layer_configs=config.decoder_layer_configs
+            )
         )
-
-        if self.encoder.layers[-1].output_dim != self.decoder.layers[0].input_dim:
-            raise ValueError("The output_dim of the last encoder layer must match the input_dim of the first decoder layer.")
+        
+    def blueprint(self) -> AutoEncoderConfig:
+        print(self)
+        return self.config
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         encoded = self.encoder(x)

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-from ...config import DenseLayerConfig
-from ...utils import get_activation
+from ...config import DenseLayerConfig, NormalizationConfig
+from ...utils import get_activation, get_normalization
 
 class DenseLayer(nn.Module):
     """A fully connected dense layer with optional activation.
@@ -16,9 +16,15 @@ class DenseLayer(nn.Module):
     def __init__(self, config: DenseLayerConfig):
         super(DenseLayer, self).__init__()
         self.linear = nn.Linear(config.input_dim, config.output_dim)
+        norm_config = NormalizationConfig(
+            norm_type=config.normalization,
+            num_features=config.output_dim
+        )
+        self.normalization = get_normalization(norm_config)
         self.activation = get_activation(config.activation)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.linear(x)
+        x = self.normalization(x)
         x = self.activation(x)
         return x

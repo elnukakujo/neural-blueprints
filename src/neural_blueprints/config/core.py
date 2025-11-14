@@ -1,6 +1,24 @@
-from typing import List, Tuple, Optional, Any, Dict
+from typing import Optional
 import torch.nn as nn
-from pydantic import BaseModel, model_validator, Field
+from pydantic import BaseModel, model_validator
+
+class NormalizationConfig(BaseModel):
+    """Configuration for a normalization layer.
+    
+    Args:
+        norm_type (str): Type of normalization. Options: 'batchnorm1d', 'batchnorm2d', 'layernorm'.
+        num_features (int): Number of features/channels for the normalization layer.
+    """
+    norm_type: str | None
+    num_features: int
+
+    @model_validator(mode='after')
+    def _validate(self):
+        if self.norm_type is not None and self.norm_type.lower() not in ('batchnorm1d', 'batchnorm2d', 'layernorm'):
+            raise ValueError(f"Unsupported norm_type: {self.norm_type}. Supported types: 'batchnorm1d', 'batchnorm2d', 'layernorm'")
+        if self.num_features <= 0:
+            raise ValueError("num_features must be a positive integer")
+        return self
 
 class DenseLayerConfig(BaseModel):
     """Configuration for a dense (fully connected) layer.
@@ -12,6 +30,7 @@ class DenseLayerConfig(BaseModel):
     """
     input_dim: int
     output_dim: int
+    normalization: Optional[str] = None
     activation: Optional[str] = None
 
     @model_validator(mode='after')
@@ -44,6 +63,7 @@ class ConvLayerConfig(BaseModel):
     kernel_size: int
     stride: int = 1
     padding: Optional[int] = None
+    output_padding: Optional[int] = None
     dilation: int = 1
     groups: int = 1
     bias: bool = True
@@ -60,6 +80,10 @@ class ConvLayerConfig(BaseModel):
             raise ValueError("kernel_size must be a positive integer")
         if self.stride <= 0:
             raise ValueError("stride must be a positive integer")
+        if self.padding is not None and self.padding < 0:
+            raise ValueError("padding must be a non-negative integer")
+        if self.output_padding is not None and self.output_padding < 0:
+            raise ValueError("output_padding must be a non-negative integer")
         if self.dilation <= 0:
             raise ValueError("dilation must be a positive integer")
         if self.groups <= 0:
@@ -120,12 +144,13 @@ class ResidualLayerConfig(BaseModel):
     Args:
         layer_config (BaseModel): Configuration of the layer to be wrapped with residual connection.
     """
-    layer_config: nn.Module
+    layer_type: str
+    layer_config: BaseModel
 
     @model_validator(mode='after')
     def _validate(self):
-        if not isinstance(self.layer_config, nn.Module):
-            raise ValueError("layer_config must be an instance of nn.Module")
+        if self.layer_type.lower() not in ('dense', 'conv', 'rnn', 'attention'):
+            raise ValueError(f"Unsupported layer_type: {self.layer_type}. Supported types: 'dense', 'conv', 'rnn', 'attention'")
         return self
     
 class EmbeddingLayerConfig(BaseModel):
@@ -187,4 +212,36 @@ class PoolingLayerConfig(BaseModel):
             raise ValueError("kernel_size must be a positive integer")
         if self.stride <= 0:
             raise ValueError("stride must be a positive integer")
+        return self
+    
+class ProjectionLayerConfig(BaseModel):
+    """Configuration for a projection layer.
+    
+    Args:
+        input_dim (int): Dimension of the input features.
+        output_dim (int): Dimension of the output features.
+    """
+    input_dim: int
+    output_dim: int
+
+    @model_validator(mode='after')
+    def _validate(self):
+        if self.input_dim <= 0:
+            raise ValueError("input_dim must be a positive integer")
+        if self.output_dim <= 0:
+            raise ValueError("output_dim must be a positive integer")
+        return self
+    
+class ReshapeLayerConfig(BaseModel):
+    """Configuration for a reshape layer.
+    
+    Args:
+        shape (tuple): Desired shape after reshaping.
+    """
+    shape: tuple
+
+    @model_validator(mode='after')
+    def _validate(self):
+        if not all(isinstance(dim, int) and dim > 0 for dim in self.shape):
+            raise ValueError("All dimensions in shape must be positive integers")
         return self

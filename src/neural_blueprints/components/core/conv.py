@@ -12,6 +12,7 @@ class BaseConvLayer(nn.Module):
         self.kernel_size = config.kernel_size
         self.stride = config.stride
         self.padding = config.padding
+        self.output_padding = config.output_padding
         self.dilation = config.dilation
         self.groups = config.groups
         self.bias = config.bias
@@ -111,6 +112,7 @@ class Conv2dTransposeLayer(BaseConvLayer):
                 self.kernel_size,
                 stride=self.stride,
                 padding=self.padding,
+                output_padding=self.output_padding,
                 dilation=self.dilation,
                 groups=self.groups,
                 bias=self.bias,
@@ -158,6 +160,7 @@ class Conv1dTransposeLayer(BaseConvLayer):
                 self.kernel_size,
                 stride=self.stride, 
                 padding=self.padding,
+                output_padding=self.output_padding,
                 dilation=self.dilation,
                 groups=self.groups,
                 bias=self.bias

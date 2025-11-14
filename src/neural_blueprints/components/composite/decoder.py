@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
 
+from neural_blueprints.components.core.projection import ProjectionLayer
+
 from ...config import DecoderConfig, TransformerDecoderConfig
-from ...utils import get_block, get_activation
+from ...utils import get_block, get_activation, get_normalization
 
 class Decoder(nn.Module):
     def __init__(self, config: DecoderConfig):
@@ -10,24 +12,21 @@ class Decoder(nn.Module):
 
         self.layer_types = config.layer_types
         self.layer_configs = config.layer_configs
-        self.projection_dim = config.projection_dim
+        self.projection = config.projection
         self.final_activation = config.final_activation
 
-        latent_dim = self.layer_configs[0].input_dim if self.layer_configs else None
-
         # Build the main generator body using the same modular layer system as Decoder
-        self.layers = nn.ModuleList()
+        layers = nn.ModuleList()
 
-        # Optional linear projection from latent space to the first hidden dimension
-        if self.projection_dim is not None:
-            self.layers.append(nn.Linear(latent_dim, self.projection_dim))
+        if self.projection is not None:
+            layers.append(ProjectionLayer(self.projection))
 
         for layer_type, layer_config in zip(self.layer_types, self.layer_configs):
-            self.layers.append(get_block(layer_type, layer_config))
+            layers.append(get_block(layer_type, layer_config))
 
-        self.layers.append(get_activation(self.final_activation))
+        layers.append(get_activation(self.final_activation))
 
-        self.network = nn.Sequential(*self.layers)
+        self.network = nn.Sequential(*layers)
                 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.network(x)
@@ -40,36 +39,49 @@ class TransformerDecoder(nn.Module):
         self.num_layers = config.num_layers
         self.num_heads = config.num_heads
         self.dropout = config.dropout
+        self.final_normalization = config.final_normalization
         self.final_activation = config.final_activation
 
-        self.layers = nn.ModuleList()
+        # Optional input projection
+        self.input_proj = (
+            nn.Linear(self.input_dim, self.hidden_dim)
+            if self.input_dim != self.hidden_dim
+            else nn.Identity()
+        )
 
-        # Optional input projection if input_dim != hidden_dim
-        if self.input_dim != self.hidden_dim:
-            self.layers.append(nn.Linear(self.input_dim, self.hidden_dim))
-
-        self.layers.append(nn.Transpose(0, 1))  # (seq_len, batch_size, hidden_dim)
-
-        # Transformer decoder layers
-        for _ in range(self.num_layers):
-            self.layers.append(
-                nn.TransformerDecoderLayer(
-                    d_model=self.hidden_dim,
-                    nhead=self.num_heads,
-                    dim_feedforward=self.hidden_dim * 4,
-                    dropout=self.dropout,
-                )
+        # Decoder layers
+        self.layers = nn.ModuleList([
+            nn.TransformerDecoderLayer(
+                d_model=self.hidden_dim,
+                nhead=self.num_heads,
+                dim_feedforward=self.hidden_dim * 4,
+                dropout=self.dropout,
+                activation="relu"
             )
+            for _ in range(self.num_layers)
+        ])
 
-        self.layers.append(nn.Transpose(0, 1))  # Back to (batch_size, seq_len, hidden_dim)
-        self.layers.append(get_activation(self.final_activation))
+        self.final_norm = get_normalization(self.final_normalization)
 
-        self.network = nn.Sequential(*self.layers)
+        # Optional normalization + activation
+        self.final_act = get_activation(self.final_activation)
 
     def forward(self, x: torch.Tensor, memory: torch.Tensor) -> torch.Tensor:
+        """
+        x: (batch_size, tgt_seq_len, input_dim)
+        memory: (batch_size, src_seq_len, hidden_dim)
+        """
+        x = self.input_proj(x)
+
+        # Transpose to (seq_len, batch_size, hidden_dim)
+        x = x.transpose(0, 1)
+        memory = memory.transpose(0, 1)
+
         for layer in self.layers:
-            if isinstance(layer, nn.TransformerDecoderLayer):
-                x = layer(x.transpose(0, 1), memory.transpose(0, 1)).transpose(0, 1)
-            else:
-                x = layer(x)
+            x = layer(x, memory)
+
+        # Back to (batch_size, seq_len, hidden_dim)
+        x = x.transpose(0, 1)
+        x = self.final_norm(x)
+        x = self.final_act(x)
         return x

@@ -6,6 +6,8 @@ from .attention import AttentionLayer
 from .residual import ResidualLayer
 from .embedding import EmbeddingLayer, PatchEmbeddingLayer
 from .pool import Pooling1dLayer, Pooling2dLayer
+from .projection import ProjectionLayer
+from .reshape import ReshapeLayer
 
 __all__ = [
     DenseLayer,
@@ -19,5 +21,7 @@ __all__ = [
     EmbeddingLayer,
     PatchEmbeddingLayer,
     Pooling1dLayer,
-    Pooling2dLayer
+    Pooling2dLayer,
+    ProjectionLayer,
+    ReshapeLayer,
 ]

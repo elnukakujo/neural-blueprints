@@ -8,18 +8,21 @@ class GAN(nn.Module):
     """A simple Generative Adversarial Network (GAN) architecture."""
     def __init__(self, config: GANConfig):
         super(GAN, self).__init__()
-        self.generator_config = config.generator_config
-        self.discriminator_config = config.discriminator_config
+        self.config = config
 
         self.generator = Generator(
-            layer_types=self.generator_config.layer_types,
-            layer_configs=self.generator_config.layer_configs
+            layer_types=config.generator_config.layer_types,
+            layer_configs=config.generator_config.layer_configs
         )
 
         self.discriminator = Discriminator(
-            layer_types=self.discriminator_config.layer_types,
-            layer_configs=self.discriminator_config.layer_configs
+            layer_types=config.discriminator_config.layer_types,
+            layer_configs=config.discriminator_config.layer_configs
         )
+    
+    def blueprint(self) -> GANConfig:
+        print(self)
+        return self.config
 
     def generate(self, z: torch.Tensor) -> torch.Tensor:
         return self.generator(z)

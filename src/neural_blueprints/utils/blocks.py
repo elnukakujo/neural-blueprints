@@ -25,6 +25,12 @@ def get_block(block_type: str, block_config: BaseModel) -> nn.Module:
     elif block_type == 'conv2d':
         from ..components.core import Conv2dLayer
         return Conv2dLayer(block_config)
+    elif block_type == 'conv1d_transpose':
+        from ..components.core import Conv1dTransposeLayer
+        return Conv1dTransposeLayer(block_config)
+    elif block_type == 'conv2d_transpose':
+        from ..components.core import Conv2dTransposeLayer
+        return Conv2dTransposeLayer(block_config)
     elif block_type == 'attention':
         from ..components.core import AttentionLayer
         return AttentionLayer(block_config)
@@ -63,5 +69,8 @@ def get_block(block_type: str, block_config: BaseModel) -> nn.Module:
         return Discriminator(block_config)
     elif block_type == 'flatten':
         return nn.Flatten()
+    elif block_type == 'reshape':
+        from ..components.core import ReshapeLayer
+        return ReshapeLayer(block_config)
     else:
         raise ValueError(f"Unsupported block type: {block_type}")
