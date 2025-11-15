@@ -1,7 +1,7 @@
 """Init file for config schemas module."""
 from .core import DenseLayerConfig, ConvLayerConfig, ProjectionLayerConfig, RecurrentUnitConfig, AttentionLayerConfig, ResidualLayerConfig, EmbeddingLayerConfig, PatchEmbeddingLayerConfig, PoolingLayerConfig, NormalizationConfig, ReshapeLayerConfig
 from .composite import FeedForwardNetworkConfig, EncoderConfig, DecoderConfig, GeneratorConfig, DiscriminatorConfig, TransformerEncoderConfig, TransformerDecoderConfig
-from .architecture import GANConfig, MLPConfig, CNNConfig, RNNConfig, AutoEncoderConfig, VariationalAutoEncoderConfig, TransformerConfig
+from .architecture import GANConfig, MLPConfig, CNNConfig, RNNConfig, AutoEncoderConfig, VariationalAutoEncoderConfig, TransformerConfig, BERTConfig
 
 __all__ = [
     DenseLayerConfig,
@@ -29,4 +29,5 @@ __all__ = [
     VariationalAutoEncoderConfig,
     GANConfig,
     TransformerConfig,
+    BERTConfig,
 ]

@@ -4,7 +4,7 @@ from .cnn import CNN
 from .rnn import RNN
 from .autoencoder import AutoEncoder, VariationalAutoEncoder
 from .gan import GAN
-from .transformer import Transformer
+from .transformer import Transformer, BERT
 
 __all__ = [
     MLP,
@@ -13,5 +13,6 @@ __all__ = [
     AutoEncoder,
     VariationalAutoEncoder,
     GAN,
-    Transformer
+    Transformer,
+    BERT
 ]

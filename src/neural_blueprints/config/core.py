@@ -39,8 +39,8 @@ class DenseLayerConfig(BaseModel):
             raise ValueError("input_dim must be a positive integer")
         if self.output_dim <= 0:
             raise ValueError("output_dim must be a positive integer")
-        if self.activation is not None and self.activation.lower() not in ('relu', 'tanh', 'sigmoid'):
-            raise ValueError(f"Unsupported activation: {self.activation}. Supported: {'relu', 'tanh', 'sigmoid'}")
+        if self.activation is not None and self.activation.lower() not in ('relu', 'tanh', 'sigmoid', 'softmax', 'gelu'):
+            raise ValueError(f"Unsupported activation: {self.activation}. Supported: {'relu', 'tanh', 'sigmoid', 'softmax', 'gelu'}")
         return self
     
 class ConvLayerConfig(BaseModel):
@@ -162,6 +162,7 @@ class EmbeddingLayerConfig(BaseModel):
     """
     num_embeddings: int
     embedding_dim: int
+    padding_idx: Optional[int] = None
 
     @model_validator(mode='after')
     def _validate(self):
@@ -169,6 +170,8 @@ class EmbeddingLayerConfig(BaseModel):
             raise ValueError("num_embeddings must be a positive integer")
         if self.embedding_dim <= 0:
             raise ValueError("embedding_dim must be a positive integer")
+        if self.padding_idx is not None and (self.padding_idx < 0 or self.padding_idx >= self.num_embeddings):
+            raise ValueError("padding_idx must be a non-negative integer less than num_embeddings")
         return self
     
 class PatchEmbeddingLayerConfig(BaseModel):

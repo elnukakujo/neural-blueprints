@@ -33,53 +33,68 @@ class Encoder(nn.Module):
         return self.network(x)
     
 class TransformerEncoder(nn.Module):
+    """
+    A clean Transformer Encoder block suitable for:
+    - Generic Transformer encoder
+    - Encoder-decoder transformers (as the encoder)
+    - BERT-style models (encoder-only)
+
+    Args:
+        config (TransformerEncoderConfig): Configuration for the Transformer Encoder.
+            - input_dim: Dimension of the input features.
+            - hidden_dim: Dimension of the hidden features.
+            - num_layers: Number of Transformer encoder layers.
+            - num_heads: Number of attention heads.
+            - dropout: Dropout rate for the layers.
+            - projection: Optional projection layer configuration to map input_dim to hidden_dim.
+            - final_normalization: Optional normalization configuration for the final output.
+            - final_activation: Optional activation function for the final output.
+    """
     def __init__(self, config: TransformerEncoderConfig):
         super().__init__()
+
         self.input_dim = config.input_dim
         self.hidden_dim = config.hidden_dim
         self.num_layers = config.num_layers
         self.num_heads = config.num_heads
         self.dropout = config.dropout
-        self.projection = config.projection
-        self.final_normalization = config.final_normalization
-        self.final_activation = config.final_activation
 
-        # Optional input projection
-        if self.projection is not None:
-            self.layers.append(ProjectionLayer(self.projection))
+        # Optional input projection (input_dim → hidden_dim)
+        self.input_proj = (
+            ProjectionLayer(config.projection)
+            if config.projection is not None
+            else nn.Identity()
+        )
 
-        # Decoder layers
+        # Transformer Encoder stack (self-attention only)
         self.layers = nn.ModuleList([
             nn.TransformerEncoderLayer(
                 d_model=self.hidden_dim,
                 nhead=self.num_heads,
                 dim_feedforward=self.hidden_dim * 4,
                 dropout=self.dropout,
+                batch_first=True,
                 activation="relu"
             )
             for _ in range(self.num_layers)
         ])
-        self.final_norm = get_normalization(self.final_normalization)
 
-        # Optional normalization + activation
-        self.final_act = get_activation(self.final_activation)
+        # Optional final normalizing block
+        self.final_norm = get_normalization(config.final_normalization)
+        self.final_act = get_activation(config.final_activation)
 
-    def forward(self, x: torch.Tensor, memory: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, attn_mask: torch.Tensor = None) -> torch.Tensor:
         """
-        x: (batch_size, tgt_seq_len, input_dim)
-        memory: (batch_size, src_seq_len, hidden_dim)
+        x: (batch, seq, input_dim)
         """
+        # Optionally project to hidden dimension
         x = self.input_proj(x)
 
-        # Transpose to (seq_len, batch_size, hidden_dim)
-        x = x.transpose(0, 1)
-        memory = memory.transpose(0, 1)
-
+        # Pass through all encoder layers
         for layer in self.layers:
-            x = layer(x, memory)
+            x = layer(x, src_key_padding_mask=attn_mask)
 
-        # Back to (batch_size, seq_len, hidden_dim)
-        x = x.transpose(0, 1)
+        # Optional normalization + activation
         x = self.final_norm(x)
         x = self.final_act(x)
         return x

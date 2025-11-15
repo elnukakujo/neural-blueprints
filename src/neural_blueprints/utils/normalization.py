@@ -14,7 +14,7 @@ def get_normalization(config: Optional[NormalizationConfig]) -> nn.Module:
     Returns:
         nn.Module | None: The corresponding normalization layer or None if norm_type is None.
     """
-    if config.norm_type is None:
+    if config is None or config.norm_type is None:
         return nn.Identity()
 
     norm_type = config.norm_type.lower()

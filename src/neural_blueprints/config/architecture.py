@@ -1,6 +1,9 @@
 from typing import List, Tuple, Optional, Any, Dict
-from ..config.composite import GeneratorConfig, DiscriminatorConfig, TransformerDecoderConfig, TransformerEncoderConfig
 from pydantic import BaseModel, model_validator, Field
+import numpy as np
+
+from ..config.core import NormalizationConfig
+from ..config.composite import GeneratorConfig, DiscriminatorConfig, TransformerDecoderConfig, TransformerEncoderConfig
 
 class MLPConfig(BaseModel):
     """Configuration for a Multi-Layer Perceptron (MLP) architecture."""
@@ -108,4 +111,41 @@ class TransformerConfig(BaseModel):
 
     @model_validator(mode='after')
     def _validate(self):
+        return self
+    
+class BERTConfig(BaseModel):
+    """Configuration for a BERT-style architecture."""
+
+    vocab_size: int
+    max_seq_len: int
+    cat_cardinalities: list[int]
+    is_cat: list[bool] = None
+    encoder_config: TransformerEncoderConfig
+    dropout: float
+    layer_types: List[str]
+    layer_configs: List[BaseModel]
+    final_normalization: Optional[NormalizationConfig] = None
+    final_activation: Optional[str] = None
+
+
+    @model_validator(mode='after')
+    def _validate(self):
+        if self.vocab_size <= 0:
+            raise ValueError("vocab_size must be a positive integer")
+        if self.max_seq_len <= 0:
+            raise ValueError("max_seq_len must be a positive integer")
+        if len(self.is_cat) != self.max_seq_len:
+            raise ValueError("Length of is_cat must match max_seq_len")
+        if self.dropout < 0.0 or self.dropout > 1.0:
+            raise ValueError("dropout must be between 0.0 and 1.0")
+        if len(self.layer_types) != len(self.layer_configs):
+            raise ValueError("Length of layer_types must match length of layer_configs")
+        valid_layer_types = {'dense', 'feedforward'}
+        for layer_type in self.layer_types:
+            if layer_type.lower() not in valid_layer_types:
+                raise ValueError(f"Unsupported layer type: {layer_type}. Supported types: {valid_layer_types}")
+        if self.final_normalization is not None and self.final_normalization.norm_type.lower() not in ('batchnorm1d', 'batchnorm2d', 'layernorm'):
+            raise ValueError(f"Unsupported final_normalization: {self.final_normalization.norm_type}. Supported: {'batchnorm1d', 'batchnorm2d', 'layernorm'}")
+        if self.final_activation is not None and self.final_activation.lower() not in ('relu', 'tanh', 'sigmoid', 'softmax', 'gelu'):
+            raise ValueError(f"Unsupported final_activation: {self.final_activation}. Supported: {'relu', 'tanh', 'sigmoid', 'softmax', 'gelu'}")
         return self

@@ -15,6 +15,7 @@ def infer_types(data: Any) -> List[str]:
     Returns:
         types_list: List of inferred types for each column.
     """
+    
     # Convert input to DataFrame
     if isinstance(data, pd.DataFrame):
         df = data.copy()
@@ -30,8 +31,11 @@ def infer_types(data: Any) -> List[str]:
 
     types_list = []
     
+    
     for col in df.columns:
         col_data = df[col].to_numpy()
+        col_data = col_data[~pd.isnull(col_data)]  # Exclude NaNs
+
         if np.issubdtype(col_data.dtype, np.number):
             # Detect discrete vs continuous
             mask_int = np.isclose(col_data, np.round(col_data), atol=1e-8)
