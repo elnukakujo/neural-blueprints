@@ -28,6 +28,7 @@ class Trainer:
         self.is_reconstruction = is_reconstruction
         self.is_masked_label = is_masked_label
         self.save_weights_path = save_weights_path if save_weights_path is not None else None
+        self.best_val_loss = float('inf')
 
         logger.info(f"Trainer initialized on device: {self.device}")
 
@@ -35,33 +36,28 @@ class Trainer:
         self.model.train()
         total_loss = 0.0
         for X_batch, y_batch, mask in train_loader:
+            self.optimizer.zero_grad()
             X_batch, y_batch, mask = X_batch.to(self.device), y_batch.to(self.device), mask.to(self.device)
-            cat_logits, cont_preds = self.model(X_batch, masked_positions=mask)
-            
-            cat_loss = 0
+            predictions = self.model(X_batch)
+
+            dis_loss = 0
             cont_loss = 0
+            for column_idx in range(len(predictions)):
+                predicted_attributes = predictions[column_idx]   # shape: (batch_size, num_classes)
+                labels = y_batch[:, column_idx]                     # shape: (batch_size,)
+                feature_mask = mask[:, column_idx]                  # shape: (batch_size,)
+                if not feature_mask.any():
+                    continue
 
-            cont_idx = 0
-            cat_idx = 0
+                predicted_attributes = predicted_attributes[feature_mask]
+                labels = labels[feature_mask]
 
-            for i, is_cat in enumerate(self.model.is_cat):
-                feature_mask = mask[:, i]
-                masked_rows = feature_mask.nonzero(as_tuple=True)[0]
+                if predicted_attributes.size(1) > 1:  # Discrete feature
+                    dis_loss += nn.functional.cross_entropy(predicted_attributes, labels.long(), ignore_index=-1, reduction='mean')
+                else:  # Continuous feature
+                    cont_loss += nn.functional.mse_loss(predicted_attributes.squeeze(-1), labels.float(), reduction='mean')
 
-                if is_cat:
-                    logits = cat_logits[cat_idx]
-                    targets = y_batch[masked_rows, i].long()
-                    cat_loss += nn.functional.cross_entropy(logits, targets, ignore_index=-1)
-                    cat_idx += 1
-                else:
-                    cont_feature_idx = i - self.model.is_cat[:i].sum().item()
-                    preds = cont_preds[cont_idx: cont_idx + masked_rows.size(0), cont_feature_idx]
-                    targets = y_batch[masked_rows, i].float()
-                    cont_loss += nn.functional.mse_loss(preds.view(-1), targets.view(-1))
-                    cont_idx += masked_rows.size(0)
-
-            loss = cat_loss + cont_loss
-            print(f"Batch Loss: {loss.item():.4f}")
+            loss = dis_loss + cont_loss
             loss.backward()
             self.optimizer.step()
             total_loss += loss.item() * X_batch.size(0)
@@ -102,36 +98,28 @@ class Trainer:
         with torch.no_grad():
             for X_batch, y_batch, mask in val_loader:
                 X_batch, y_batch, mask = X_batch.to(self.device), y_batch.to(self.device), mask.to(self.device)
-                cat_logits, cont_preds = self.model(X_batch, masked_positions=mask)
-                
-                cat_loss = 0
+                predictions = self.model(X_batch)
+
+                dis_loss = 0
                 cont_loss = 0
+                for column_idx in range(len(predictions)):
+                    predicted_attributes = predictions[column_idx]   # shape: (batch_size, num_classes)
+                    labels = y_batch[:, column_idx]                     # shape: (batch_size,)
+                    feature_mask = mask[:, column_idx]                  # shape: (batch_size,)
+                    if not feature_mask.any():
+                        continue
 
-                cont_idx = 0
-                cat_idx = 0
+                    predicted_attributes = predicted_attributes[feature_mask]
+                    labels = labels[feature_mask]
 
-                for i, is_cat in enumerate(self.model.is_cat):
-                    if is_cat:
-                        logits = cat_logits[cat_idx]
-                        feature_mask = mask[:, cat_idx]
-                        targets = y_batch[:, i][feature_mask].long()
-                        cat_loss += nn.functional.cross_entropy(logits, targets, ignore_index=-1)
-                        cat_idx += 1
-                    else:
-                        feature_mask = mask[:, i]
-                        masked_rows = feature_mask.nonzero(as_tuple=True)[0]
-                        cont_feature_idx = i - self.model.is_cat[:i].sum().item()
-                        preds = cont_preds[cont_idx: cont_idx + masked_rows.size(0), cont_feature_idx]
-                        targets = y_batch[masked_rows, i].float()
-                        cont_loss += nn.functional.mse_loss(preds.view(-1), targets.view(-1))
-                        cont_idx += masked_rows.size(0)
+                    if predicted_attributes.size(1) > 1:  # Discrete feature
+                        dis_loss += nn.functional.cross_entropy(predicted_attributes, labels.long(), ignore_index=-1, reduction='mean')
+                    else:  # Continuous feature
+                        cont_loss += nn.functional.mse_loss(predicted_attributes.squeeze(-1), labels.float(), reduction='mean')
 
-                loss = cat_loss + cont_loss
+                loss = dis_loss + cont_loss
                 total_loss += loss.item() * X_batch.size(0)
             avg_loss = total_loss / len(val_loader.dataset)
-        if self.best_val_loss > avg_loss:
-            self.best_val_loss = avg_loss
-            torch.save(self.model.state_dict(), "best_model.pth")
         return avg_loss
     
     def evaluate_reconstruction(self, val_loader: torch.utils.data.DataLoader) -> float:
@@ -144,9 +132,6 @@ class Trainer:
                 loss = self.criterion(y_pred = y_pred, y_true = X_batch)
                 total_loss += loss.item() * X_batch.size(0)
         avg_loss = total_loss / len(val_loader.dataset)
-        if self.best_val_loss > avg_loss:
-            self.best_val_loss = avg_loss
-            torch.save(self.model.state_dict(), "best_model.pth")
         return avg_loss
     
     def evaluate_label(self, val_loader: torch.utils.data.DataLoader) -> float:
@@ -159,9 +144,6 @@ class Trainer:
                 loss = self.criterion(y_pred = y_pred, y_true = y_batch)
                 total_loss += loss.item() * X_batch.size(0)
         avg_loss = total_loss / len(val_loader.dataset)
-        if self.best_val_loss > avg_loss:
-            self.best_val_loss = avg_loss
-            torch.save(self.model.state_dict(), "best_model.pth")
         return avg_loss
     
     def train_epoch(self, train_loader: torch.utils.data.DataLoader) -> float:
@@ -174,16 +156,19 @@ class Trainer:
 
     def evaluate(self, val_loader: torch.utils.data.DataLoader) -> float:
         if self.is_reconstruction:
-            return self.evaluate_reconstruction(val_loader)
+            val_loss = self.evaluate_reconstruction(val_loader)
         elif self.is_masked_label:
-            return self.evaluate_masked_label(val_loader)
+            val_loss = self.evaluate_masked_label(val_loader)
         else:
-            return self.evaluate_label(val_loader)
+            val_loss = self.evaluate_label(val_loader)
+        if self.best_val_loss > val_loss:
+            self.best_val_loss = val_loss
+            torch.save(self.model.state_dict(), "best_model.pth")
+        return val_loss
     
     def train(self, train_loader: torch.utils.data.DataLoader, val_loader: torch.utils.data.DataLoader, epochs: int, visualize: bool = True):
         train_losses = []
         val_losses = []
-        self.best_val_loss = float('inf')
 
         for epoch in tqdm(range(epochs), desc="Training Epochs", unit="epoch"):
             train_losses.append(self.train_epoch(train_loader))
@@ -202,7 +187,6 @@ class Trainer:
             )
 
         self.model.load_state_dict(torch.load("best_model.pth"))
-        os.remove("best_model.pth")
         
         if self.save_weights_path:
             torch.save(self.model.state_dict(), self.save_weights_path)
