@@ -22,17 +22,39 @@ def get_criterion(metric_name: str) -> callable:
         return binary_cross_entropy
     elif metric_name == 'vae_loss':
         return vae_loss
+    elif metric_name == 'tabular_masked_loss':
+        return tabular_masked_loss
     else:
         raise ValueError(f"Unsupported metric/loss function: {metric_name}")
 
-def accuracy(y_pred: torch.Tensor, y_true: torch.Tensor, threshold: float = 0.05, mask_cat: torch.BoolTensor = None) -> float:
+def get_optimizer(optimizer_name: str, parameters, lr: float = 1e-3, weight_decay: float = 0.0) -> torch.optim.Optimizer:
+    """Returns the appropriate optimizer based on the optimizer name.
+    
+    Args:
+        optimizer_name (str): Name of the optimizer.
+        parameters: Model parameters to optimize.
+        lr (float): Learning rate.
+        weight_decay (float): Weight decay (L2 regularization).
+        
+    Returns:
+        torch.optim.Optimizer: Corresponding optimizer.
+    """
+    optimizer_name = optimizer_name.lower()
+    if optimizer_name == 'adam':
+        return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
+    elif optimizer_name == 'sgd':
+        return torch.optim.SGD(parameters, lr=lr, weight_decay=weight_decay)
+    else:
+        raise ValueError(f"Unsupported optimizer: {optimizer_name}")
+
+def accuracy(y_pred: torch.Tensor, y_true: torch.Tensor, threshold: float = 0.05, mask_dis: torch.BoolTensor = None) -> float:
     """Calculates the accuracy metric.
     
     Args:
         y_pred (torch.Tensor): Predicted labels.
         y_true (torch.Tensor): True labels.
         threshold (float): Threshold to consider a prediction correct for regression tasks.
-        mask_cat (torch.BoolTensor, optional): Boolean mask indicating which samples are categorical.
+        mask_dis (torch.BoolTensor, optional): Boolean mask indicating which samples are categorical.
 
     Returns:
         float: Accuracy score.
@@ -40,27 +62,29 @@ def accuracy(y_pred: torch.Tensor, y_true: torch.Tensor, threshold: float = 0.05
     y_true_np = y_true.cpu().numpy()
     y_pred_np = y_pred.cpu().numpy()
 
-    if mask_cat is None:
-        mask_cat = np.isclose(y_true_np, np.round(y_true_np), atol=1e-8)
-        if mask_cat.ndim > 1:
-            mask_cat = np.all(mask_cat, axis=1)
+    if mask_dis is None:
+        mask_dis = np.isclose(y_true_np, np.round(y_true_np), atol=1e-8)
+        if mask_dis.ndim > 1:
+            mask_dis = np.all(mask_dis, axis=1)
         else:
-            mask_cat = mask_cat.astype(bool)
+            mask_dis = mask_dis.astype(bool)
 
     result = np.empty_like(y_true_np, dtype=bool)
-    result[mask_cat] = np.round(y_pred_np[mask_cat]) == y_true_np[mask_cat]
-    result[~mask_cat] = (np.abs(y_pred_np[~mask_cat] - y_true_np[~mask_cat]) / (np.abs(y_true_np[~mask_cat]) + 1e-12)) <= threshold
+    result[mask_dis] = np.round(y_pred_np[mask_dis]) == y_true_np[mask_dis]
+    result[~mask_dis] = np.abs(y_pred_np[~mask_dis] - y_true_np[~mask_dis]) <= threshold
     
     correct = np.sum(result)
     total = y_true_np.shape[0]
     return correct / total
 
-def recall(y_pred: torch.Tensor, y_true: torch.Tensor, threshold: float = 0.05, mask_cat: torch.BoolTensor = None) -> float:
+def recall(y_pred: torch.Tensor, y_true: torch.Tensor, threshold: float = 0.05, mask_dis: torch.BoolTensor = None) -> float:
     """Calculates the recall metric.
     
     Args:
         y_pred (torch.Tensor): Predicted labels.
         y_true (torch.Tensor): True labels.
+        threshold (float): Threshold to consider a prediction correct for regression tasks.
+        mask_dis (torch.BoolTensor, optional): Boolean mask indicating which samples are categorical.
         
     Returns:
         float: Recall score.
@@ -68,20 +92,20 @@ def recall(y_pred: torch.Tensor, y_true: torch.Tensor, threshold: float = 0.05, 
     y_true_np = y_true.cpu().numpy()
     y_pred_np = y_pred.cpu().numpy()
 
-    if mask_cat is None:
-        mask_cat = np.isclose(y_true_np, np.round(y_true_np), atol=1e-8)
-        mask_cat = np.all(mask_cat, axis=1)
+    if mask_dis is None:
+        mask_dis = np.isclose(y_true_np, np.round(y_true_np), atol=1e-8)
+        mask_dis = np.all(mask_dis, axis=1)
 
     # Initialize boolean result array
     correct_mask = np.zeros_like(y_true_np, dtype=bool)
 
     # Discrete rows: exact match
-    correct_mask[mask_cat] = np.round(y_pred_np[mask_cat]) == y_true_np[mask_cat]
+    correct_mask[mask_dis] = np.round(y_pred_np[mask_dis]) == y_true_np[mask_dis]
 
     # Continuous rows: within relative threshold
-    correct_mask[~mask_cat] = (
-        np.abs(y_pred_np[~mask_cat] - y_true_np[~mask_cat])
-        / (np.abs(y_true_np[~mask_cat]) + 1e-12)
+    correct_mask[~mask_dis] = (
+        np.abs(y_pred_np[~mask_dis] - y_true_np[~mask_dis])
+        / (np.abs(y_true_np[~mask_dis]) + 1e-12)
     ) <= threshold
 
     # For recall: focus on positive samples in y_true
@@ -94,20 +118,20 @@ def recall(y_pred: torch.Tensor, y_true: torch.Tensor, threshold: float = 0.05, 
 
     return true_positives / false_negatives
 
-def f1_score(y_pred: torch.Tensor, y_true: torch.Tensor, threshold: float = 0.05, mask_cat: torch.BoolTensor = None) -> float:
+def f1_score(y_pred: torch.Tensor, y_true: torch.Tensor, threshold: float = 0.05, mask_dis: torch.BoolTensor = None) -> float:
     """Calculates the F1 score metric.
     
     Args:
         y_pred (torch.Tensor): Predicted labels.
         y_true (torch.Tensor): True labels.
         threshold (float): Threshold to consider a prediction correct for regression tasks.
-        mask_cat (torch.BoolTensor, optional): Boolean mask indicating which samples are categorical.
+        mask_dis (torch.BoolTensor, optional): Boolean mask indicating which samples are categorical.
         
     Returns:
         float: F1 score.
     """
-    accuracy_score = accuracy(y_true, y_pred, threshold, mask_cat)
-    recall_score = recall(y_true, y_pred, threshold, mask_cat)
+    accuracy_score = accuracy(y_true, y_pred, threshold, mask_dis)
+    recall_score = recall(y_true, y_pred, threshold, mask_dis)
     if (accuracy_score + recall_score) == 0:
         return 0.0
     
@@ -141,8 +165,8 @@ def cross_entropy(y_pred, y_true) -> float:
     """Calculates the Cross Entropy Loss metric.
     
     Args:
-        y_true (torch.Tensor): True class labels (as integers).
         y_pred (torch.Tensor): Predicted class probabilities (logits).
+        y_true (torch.Tensor): True class labels (as integers).
     
     Returns:
         float: Cross Entropy Loss score.
@@ -153,8 +177,8 @@ def binary_cross_entropy(y_pred, y_true) -> float:
     """Calculates the Binary Cross Entropy Loss metric.
     
     Args:
-        y_true (torch.Tensor): True binary labels (0 or 1).
         y_pred (torch.Tensor): Predicted probabilities for the positive class.
+        y_true (torch.Tensor): True binary labels (0 or 1).
         
     Returns:
         float: Binary Cross Entropy Loss score.
@@ -181,7 +205,7 @@ def vae_loss(y_pred, y_true):
     kld = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     return recon_loss + kld
 
-def root_mean_squared_error(y_true: torch.Tensor, y_pred: torch.Tensor) -> float:
+def root_mean_squared_error(y_pred: torch.Tensor, y_true: torch.Tensor) -> float:
     """Calculates the Root Mean Squared Error (RMSE) metric.
     
     Args:
@@ -193,7 +217,7 @@ def root_mean_squared_error(y_true: torch.Tensor, y_pred: torch.Tensor) -> float
     """
     return nn.functional.mse_loss(y_pred, y_true, reduction='mean').sqrt()
 
-def r2_score(y_true: torch.Tensor, y_pred: torch.Tensor) -> float:
+def r2_score(y_pred: torch.Tensor, y_true: torch.Tensor) -> float:
     """Calculates the R-squared (R2) metric.
     
     Args:
@@ -204,3 +228,35 @@ def r2_score(y_true: torch.Tensor, y_pred: torch.Tensor) -> float:
         float: R2 score.
     """
     return nn.functional.r2_score(y_pred, y_true)
+
+def tabular_masked_loss(y_pred, y_true, mask):
+    """Calculates the masked loss for tabular data with mixed feature types (discrete and continuous).
+    
+    Args:
+        y_pred (torch.Tensor): Predicted values.
+        y_true (torch.Tensor): True values.
+        mask (torch.BoolTensor): Boolean mask indicating which entries to include in the loss.
+        
+    Returns:
+        float: Computed masked loss value.
+    """
+    total_loss = 0
+        
+    for col_idx in range(len(y_pred)):
+        pred = y_pred[col_idx]
+        label = y_true[:, col_idx]
+        col_mask = mask[:, col_idx]
+        
+        if col_mask.sum() == 0:
+            continue
+        
+        if pred.size(1) > 1:
+            # Weighted cross-entropy
+            loss = nn.functional.cross_entropy(pred[col_mask], label[col_mask].long(), reduction='mean')
+        else:
+            # MSE for continuous
+            loss = nn.functional.mse_loss(pred[col_mask].squeeze(-1), label[col_mask].float(), reduction='mean')
+        
+        total_loss += loss
+    
+    return total_loss / len(y_pred)

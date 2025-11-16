@@ -25,7 +25,7 @@ class EmbeddingLayer(nn.Module):
         Returns:
             torch.Tensor: Output tensor of shape (batch_size, sequence_length, embedding_dim).
         """
-        return self.embedding(x)
+        return self.embedding(x.long())
     
 class PatchEmbeddingLayer(nn.Module):
     """Patch Embedding layer component.

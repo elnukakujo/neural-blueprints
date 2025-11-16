@@ -1,5 +1,4 @@
 from typing import Optional
-import torch.nn as nn
 from pydantic import BaseModel, model_validator
 
 class NormalizationConfig(BaseModel):

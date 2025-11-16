@@ -24,7 +24,7 @@ class DenseLayer(nn.Module):
         self.activation = get_activation(config.activation)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.linear(x)
+        x = self.linear(x.float())
         x = self.normalization(x)
         x = self.activation(x)
         return x

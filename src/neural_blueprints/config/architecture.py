@@ -116,7 +116,6 @@ class TransformerConfig(BaseModel):
 class BERTConfig(BaseModel):
     """Configuration for a BERT-style architecture."""
 
-    seq_len: int
     cardinalities: list[int]
     encoder_config: TransformerEncoderConfig
     dropout: float
@@ -128,10 +127,6 @@ class BERTConfig(BaseModel):
 
     @model_validator(mode='after')
     def _validate(self):
-        if self.seq_len <= 0:
-            raise ValueError("seq_len must be a positive integer")
-        if len(self.cardinalities) != self.seq_len:
-            raise ValueError("Length of cardinalities must match seq_len")
         if self.dropout < 0.0 or self.dropout > 1.0:
             raise ValueError("dropout must be between 0.0 and 1.0")
         if self.final_normalization is not None and self.final_normalization.norm_type.lower() not in ('batchnorm1d', 'batchnorm2d', 'layernorm'):

@@ -1,13 +1,11 @@
 import torch
-import numpy as np
-from torch.utils.data import DataLoader, Dataset
-import torch.optim as optim
-from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.datasets import fetch_openml
 
-from neural_blueprints.utils import Trainer, get_device, infer_types
-from neural_blueprints.config import BERTConfig, TransformerEncoderConfig, FeedForwardNetworkConfig, NormalizationConfig
+from neural_blueprints.utils import Trainer, accuracy
+from neural_blueprints.config import BERTConfig, TransformerEncoderConfig, NormalizationConfig, TrainerConfig
 from neural_blueprints.architectures import BERT
+from neural_blueprints.datasets import MaskedTabularDataset
+from neural_blueprints.preprocess import TabularPreprocessor
 
 # Fetch Adult Income dataset from OpenML
 adult = fetch_openml("adult", version=2, as_frame=True)
@@ -19,74 +17,39 @@ y = adult.target
 data = X.copy()
 data[y.name] = y
 
-# Infer types
-data_types = infer_types(data)
-data_dtypes = {col: dtype for col, dtype in zip(data.columns, data_types)}
-data = data.astype(data_dtypes)
-
-# Separate categorical and continuous columns
-cat_cols = data.select_dtypes(include=['category']).columns.tolist()
-cont_cols = data.select_dtypes(include=['float32', 'int32']).columns.tolist()
-
-# Encode categorical columns
-for col in cat_cols:
-    le = LabelEncoder()
-    data[col] = le.fit_transform(data[col])
-
-# Standardize continuous columns
-scaler = StandardScaler()
-data[cont_cols] = scaler.fit_transform(data[cont_cols])
-
 # ----------------------------
-# 2️⃣ Masked Attribute Dataset
+# 1. Data Preprocessing
 # ----------------------------
-class MaskedTabularDataset(Dataset):
-    def __init__(self, data, cat_cols, cont_cols, mask_prob=0.15):
-        self.data = torch.tensor(data.to_numpy())
-        self.cardinalities = [data[col].nunique() if data[col].dtype.name == 'category' else 1 for col in data.columns]
-        self.cat_idx = [data.columns.get_loc(c) for c in cat_cols]
-        self.cont_idx = [data.columns.get_loc(c) for c in cont_cols]
-        self.mask_prob = mask_prob
-        self.is_cat = torch.BoolTensor([True if i in self.cat_idx else False for i in range(data.shape[1])])
 
-    def __len__(self):
-        return len(self.data)
+preprocessor = TabularPreprocessor()
+data, discrete_features, continuous_features = preprocessor.run(data)
 
-    def __getitem__(self, idx):
-        row = self.data[idx].clone()
-        mask = torch.rand(row.shape) < self.mask_prob
-        labels = row.clone()
-        row[mask] = -1  # Masked features
-        labels[~mask] = -1  # Only predict masked
-        return row, labels, mask
+# Create dataset
+dataset = MaskedTabularDataset(
+    data, 
+    discrete_features, 
+    continuous_features,
+    mask_prob=0.25
+)
 
-dataset = MaskedTabularDataset(data, cat_cols, cont_cols, mask_prob=0.15)
-
-train_size = int(0.9 * len(dataset))
+train_size = int(0.8 * len(dataset))
 val_size = len(dataset) - train_size
-train_ds, val_ds = torch.utils.data.random_split(dataset, [train_size, val_size])
-
-train_loader = DataLoader(train_ds, batch_size=64, shuffle=True)
-val_loader = DataLoader(val_ds, batch_size=64, shuffle=False)
+train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
 # ----------------------------
 # 2. BERT Configuration
 # ----------------------------
 
-hidden_dim = 32
-seq_len = data.shape[1]
-
 bert_config = BERTConfig(
-    seq_len=seq_len,
     cardinalities=dataset.cardinalities,
     encoder_config=TransformerEncoderConfig(
-        input_dim=seq_len,
-        hidden_dim=hidden_dim,
+        input_dim=data.shape[1],
+        hidden_dim=32,
         num_layers=4,
         num_heads=4,
         dropout=0.1,
         projection=None,
-        final_normalization=NormalizationConfig(norm_type="layernorm", num_features=hidden_dim),
+        final_normalization=NormalizationConfig(norm_type="layernorm", num_features=32),
         final_activation=None
     ),
     with_input_projection=True,
@@ -99,27 +62,60 @@ bert_config = BERTConfig(
 model = BERT(bert_config)
 model.blueprint()
 
+# ----------------------------
+# 3. Training
+# ---------------------------
+
 trainer = Trainer(
     model=model,
-    optimizer=optim.Adam(model.parameters(), lr=1e-4),
-    criterion="cross_entropy",
-    device=get_device(),
-    is_masked_label=True
+    config=TrainerConfig(
+        training_type='masked_label',
+        criterion='tabular_masked_loss',
+        optimizer='adam',
+        learning_rate=1e-3,
+        weight_decay=1e-5,
+        save_weights_path="models/bert_adult.pth",
+        batch_size=64
+    )
 )
-trainer.train(train_loader, val_loader, epochs=5, visualize=False)
+trainer.train(train_dataset, val_dataset, epochs=2, visualize=True)
 
-# Example prediction
-model.eval()
-with torch.no_grad():
-    tokens, labels, mask = next(iter(val_loader))
-    tokens = tokens.to(get_device())
-    predictions = model(tokens)
+# ----------------------------
+# 4. Evaluation
+# ---------------------------
 
-    for column_idx in range(len(predictions)):
-        predicted_attributes = predictions[column_idx]      # shape: (batch_size, num_classes)
-        targets = labels[:, column_idx]                     # shape: (batch_size,)
+val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=100, shuffle=False)
+X, y, mask = next(iter(val_loader))  # Get first 100 samples from validation set
+predictions, _ = trainer.predict(X, y, mask)
 
-        feature_mask = mask[:, column_idx]                  # shape: (batch_size,)
-        predicted_attributes = predicted_attributes[feature_mask]
-        targets = targets[feature_mask]
-        print("Predicted token IDs at masked positions:", predicted_attributes.argmax(dim=1).cpu().numpy())
+dis_accuracy = 0
+cont_accuracy = 0
+for column_idx, column_name in enumerate(data.columns):
+    print(f"\nFeature Column {column_name}:")
+    predicted_attributes = predictions[column_idx]      # shape: (batch_size, num_classes)
+    targets = y[:, column_idx]                     # shape: (batch_size,)
+
+    feature_mask = mask[:, column_idx]                  # shape: (batch_size,)
+    predicted_attributes = predicted_attributes[feature_mask]
+    if predicted_attributes.size(1) > 1:
+        predicted_attributes = predicted_attributes.softmax(dim=-1).argmax(dim=-1).cpu().numpy()
+    else:
+        predicted_attributes = predicted_attributes.squeeze(-1).cpu().numpy()
+    targets = targets[feature_mask].cpu().numpy()
+
+    print("Predicted attribute values:", predicted_attributes[:5])
+    print("True attribute values:", targets[:5])
+
+    accuracy_value = accuracy(torch.tensor(predicted_attributes), torch.tensor(targets))
+    print(f"Accuracy: {accuracy_value:.4f}")
+    if column_name in discrete_features:
+        dis_accuracy += accuracy_value
+    else:
+        cont_accuracy += accuracy_value
+
+avg_dis_accuracy = dis_accuracy / len(discrete_features) if len(discrete_features) > 0 else 0
+avg_cont_accuracy = cont_accuracy / len(continuous_features) if len(continuous_features) > 0 else 0
+print(f"\nAverage Discrete Accuracy: {avg_dis_accuracy:.4f}")
+print(f"Average Continuous Accuracy: {avg_cont_accuracy:.4f}")
+avg_accuracy = (dis_accuracy + cont_accuracy) / len(data.columns)
+print(f"Overall Average Accuracy: {avg_accuracy:.4f}")

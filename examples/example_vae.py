@@ -1,12 +1,9 @@
 import torch
-from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-import torch.optim as optim
 
 from neural_blueprints.architectures.autoencoder import VariationalAutoEncoder
-from neural_blueprints.config import VariationalAutoEncoderConfig, ConvLayerConfig, DenseLayerConfig, ReshapeLayerConfig
-from neural_blueprints.utils import Trainer, get_device
-from neural_blueprints.utils import image_plot
+from neural_blueprints.config import VariationalAutoEncoderConfig, ConvLayerConfig, DenseLayerConfig, ReshapeLayerConfig, TrainerConfig
+from neural_blueprints.utils import Trainer, get_device, image_plot
 
 # ----------------------------
 # 1. Data preparation
@@ -17,9 +14,6 @@ transform = transforms.Compose([
 
 train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
 test_dataset = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
-
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 latent_dim = 20
 
@@ -45,10 +39,19 @@ vae_config = VariationalAutoEncoderConfig(
 model = VariationalAutoEncoder(vae_config)
 model.blueprint()
 
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-
-trainer = Trainer(model, optimizer, 'vae_loss', get_device(), is_reconstruction=True)
-trainer.train(train_loader, val_loader=test_loader, epochs=10)
+trainer = Trainer(
+    config=TrainerConfig(
+        learning_rate=1e-3,
+        weight_decay=1e-5,
+        save_weights_path="../models/vae_mnist.pth",
+        batch_size=64,
+        training_type="reconstruction",
+        criterion="vae_loss",
+        optimizer='adam'
+    ),
+    model=model
+)
+trainer.train(train_dataset=train_dataset, val_dataset=test_dataset, epochs=10)
 
 model.eval()
 with torch.no_grad():

@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from ..components.composite import TransformerEncoder, TransformerDecoder
-from ..components.core import ProjectionLayer, EmbeddingLayer, DenseLayer
-from ..config import TransformerConfig, BERTConfig, DenseLayerConfig, EmbeddingLayerConfig, NormalizationConfig
+from ..components.composite import TransformerEncoder, TransformerDecoder, FeedForwardNetwork
+from ..components.core import ProjectionLayer, EmbeddingLayer
+from ..config import TransformerConfig, BERTConfig, EmbeddingLayerConfig, NormalizationConfig, FeedForwardNetworkConfig
 from ..utils import get_normalization
 
 class Transformer(nn.Module):
@@ -53,7 +53,7 @@ class BERT(nn.Module):
         self.config = config
 
         # Configuration
-        self.seq_len = config.seq_len          # number of features
+        self.seq_len = config.encoder_config.input_dim          # number of features
         self.cardinalities = config.cardinalities                    # boolean tensor for categorical features
         self.hidden_dim = config.encoder_config.hidden_dim
         self.encoder_config = config.encoder_config
@@ -62,7 +62,6 @@ class BERT(nn.Module):
         self.num_dis = sum(1 for cardinality in self.cardinalities if cardinality > 1)
         self.num_cont = self.seq_len - self.num_dis
 
-
         # ---- Projections for discrete and continuous features ----
         if self.with_input_projection:
             self.input_projections = nn.ModuleList([])
@@ -70,7 +69,7 @@ class BERT(nn.Module):
                 if cardinality>1:   # Discrete Scenario
                     self.input_projections.append(EmbeddingLayer(config=EmbeddingLayerConfig(num_embeddings=cardinality, embedding_dim=self.hidden_dim)))
                 else:               # Continuous Scenario
-                    self.input_projections.append(DenseLayer(config=DenseLayerConfig(input_dim=1, output_dim=self.hidden_dim)))
+                    self.input_projections.append(FeedForwardNetwork(config=FeedForwardNetworkConfig(input_dim=1, hidden_dims=[self.hidden_dim, self.hidden_dim], output_dim=self.hidden_dim, activation='relu', dropout=0.1)))
 
         # Positional embeddings (optional)
         self.pos_emb = EmbeddingLayer(
@@ -87,23 +86,50 @@ class BERT(nn.Module):
 
         # ---- Heads for masked attribute prediction ----
         if self.with_output_projection:
-            self.output_projections = nn.ModuleList([
-                DenseLayer(config=DenseLayerConfig(input_dim=self.hidden_dim, output_dim=cardinality))
-                for cardinality in self.cardinalities
-            ])
+            self.output_projections = nn.ModuleList([])
+            for cardinality in self.cardinalities:
+                if cardinality > 1:  # Categorical
+                    self.output_projections.append(
+                        FeedForwardNetwork(config=FeedForwardNetworkConfig(
+                            input_dim=self.hidden_dim,
+                            hidden_dims=[self.hidden_dim // 2],
+                            output_dim=cardinality
+                        ))
+                    )
+                else:  # Continuous - deeper head
+                    self.output_projections.append(
+                        FeedForwardNetwork(config=FeedForwardNetworkConfig(
+                            input_dim=self.hidden_dim,
+                            hidden_dims=[self.hidden_dim, self.hidden_dim // 2],  # Deeper!
+                            output_dim=1,
+                            activation='relu',
+                            dropout=0.1
+                        ))
+                    )
     def blueprint(self):
         print(self)
         return self.config
 
     def forward(self, x):
         B, L = x.shape
-        x = x.view(B, L, 1).float()  # shape: (batch, seq_len, 1)
         # ---- Split categorical and continuous features ----
         
         if self.with_input_projection:
             x_embed = []
+            nan_mask = []
             for column_idx in range(self.seq_len):
-                x_embed.append(self.input_projections[column_idx](x[:, column_idx]))  # shape: (batch, hidden_dim)
+                column_data = x[:, column_idx]  # shape: (batch,)
+                if self.cardinalities[column_idx] > 1:  # Discrete feature
+                    x_embed.append(self.input_projections[column_idx](column_data))  # shape: (batch, hidden_dim)
+                    nan_mask.append(column_data == 0)
+                else:
+                    nan_mask.append(column_data == -2.0)
+                    column_data = column_data.unsqueeze(-1)  # shape: (batch, 1)
+                    x_embed.append(self.input_projections[column_idx](column_data))  # shape: (batch, hidden_dim)
+
+            nan_mask = torch.stack(nan_mask, dim=1)                 # shape: (batch, seq_len)
+            nan_mask = nan_mask.masked_fill(nan_mask == True, float('-inf'))  # shape: (batch, seq_len)
+
             x_embed = torch.stack(x_embed, dim=1)                   # shape: (batch, seq_len, hidden_dim)
             assert x_embed.shape == (B, L, self.hidden_dim)
         else:
@@ -117,7 +143,7 @@ class BERT(nn.Module):
         x_embed = self.dropout(x_embed)
 
         # ---- Transformer encoder ----
-        x_embed = self.encoder(x_embed)  # shape: (B, num_features, hidden_dim)
+        x_embed = self.encoder(x_embed, attn_mask = nan_mask)  # shape: (B, num_features, hidden_dim)
         assert x_embed.shape == (B, L, self.hidden_dim)
         assert x_embed.cpu().isnan().sum() == 0, "NaN values detected in Transformer encoder output"
 
