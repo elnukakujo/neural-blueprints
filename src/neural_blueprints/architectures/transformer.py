@@ -4,7 +4,7 @@ import numpy as np
 
 from ..components.composite import TransformerEncoder, TransformerDecoder, FeedForwardNetwork
 from ..components.core import ProjectionLayer, EmbeddingLayer
-from ..config import TransformerConfig, BERTConfig, EmbeddingLayerConfig, NormalizationConfig, FeedForwardNetworkConfig
+from ..config import TransformerConfig, TabularBERTConfig, EmbeddingLayerConfig, NormalizationConfig, FeedForwardNetworkConfig
 from ..utils import get_normalization
 
 class Transformer(nn.Module):
@@ -40,7 +40,7 @@ class Transformer(nn.Module):
         out = self.output_proj(decoded)
         return out
     
-class BERT(nn.Module):
+class TabularBERT(nn.Module):
     """
     A BERT-style model for masked attribute inference on tabular data:
     - Embeddings for categorical features

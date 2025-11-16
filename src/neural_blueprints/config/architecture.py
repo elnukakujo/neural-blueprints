@@ -113,7 +113,7 @@ class TransformerConfig(BaseModel):
     def _validate(self):
         return self
     
-class BERTConfig(BaseModel):
+class TabularBERTConfig(BaseModel):
     """Configuration for a BERT-style architecture."""
 
     cardinalities: list[int]
