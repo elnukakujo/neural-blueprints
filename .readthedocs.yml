@@ -23,8 +23,3 @@ python:
       path: .
       extra_requirements:
         - docs
-
-# Optional: set formats for building
-formats:
-  - pdf
-  - epub
