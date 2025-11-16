@@ -8,7 +8,7 @@ This project is organized to support rapid prototyping while keeping codebases m
 
 ## 🚀 Features
 
-* **Prebuilt Architectures**: MLPs, CNNs, RNNs, Transformers, GANs, Autoencoders.
+* **Prebuilt Architectures**: MLPs, CNNs, RNNs, Transformers, GANs, Autoencoders, TabularBERT.
 * **Composable Components**: Core layers (dense, conv, recurrent, attention, residual, etc.) and higher-level composite modules (encoders, decoders, generators, discriminators).
 * **Config System**: Structured configuration objects for architectures and components.
 * **Dataset Utilities**: Built-in masked tabular dataset class.
@@ -36,7 +36,7 @@ Located in `architectures/`:
 * `mlp.py` — Multi-Layer Perceptron
 * `cnn.py` — Convolutional Neural Network
 * `rnn.py` — Recurrent Neural Network
-* `transformer.py` — Transformer encoder/decoder
+* `transformer.py` — Transformer architecture and TabularBERT architecture
 * `autoencoder.py` — Autoencoder architecture
 * `gan.py` — Generative Adversarial Network (Generator & Discriminator)
 
@@ -93,13 +93,36 @@ If you're using this as a template or integrating it into your own project, simp
 ## 🧪 Usage Example
 
 ```python
-from neural_blueprints.architectures.mlp import MLP
-from neural_blueprints.utils.trainer import Trainer
+from neural_blueprints.architectures import MLP
+from neural_blueprints.config import MLPConfig, TrainerConfig
+from neural_blueprints.utils import Trainer
 
-model = MLP(input_dim=128, hidden_dims=[256, 128, 64], output_dim=10)
-trainer = Trainer(model)
+mlp_config = MLPConfig(
+    input_dim=15,
+    hidden_dims=[64, 32, 16],
+    output_dim=1,
+    normalization=None,
+    activation='relu',
+    final_activation=None
+)
+model = MLP(mlp_config)
 
-trainer.fit(train_loader, epochs=20)
+trainer_config = TrainerConfig(
+    training_type="label",
+    optimizer="adam",
+    criterion="mse",
+    learning_rate=0.001,
+    weight_decay=1e-5,
+    batch_size=32,
+    save_weights_path="../models/mlp_adult.pth"
+)
+
+trainer = Trainer(
+    config= trainer_config,
+    model= model
+)
+
+trainer.train(train_dataset, val_dataset, epochs=20)
 ```
 
 ---
@@ -111,6 +134,7 @@ Neural Blueprints follows three core principles:
 1. **Modularity** — Every component is replaceable.
 2. **Clarity** — No magic. Explicit is better than implicit.
 3. **Reusability** — Build once, compose anywhere.
+4. **Control** - Each component has config schemas with attributes validation
 
 ---
 
