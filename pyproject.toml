@@ -1,17 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "neural-blueprints"
 version = "0.1.0"
-description = "Add your description here"
+description = "Modular deep learning architecture components for rapid prototyping"
 readme = "README.md"
 authors = [
-    { name = "Noe Jager", email = "noe.p.jager@gmail.com" }
+    {name = "Noe Jager", email = "noe.p.jager@gmail.com"}
 ]
+maintainers = [
+    {name = "Noe Jager", email = "noe.p.jager@gmail.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = ["deep-learning", "neural-networks", "pytorch", "machine-learning", "ai"]
 requires-python = ">=3.12"
 dependencies = [
-    "datasets>=4.4.1",
-    "logging>=0.4.9.6",
     "matplotlib>=3.10.7",
-    "nbformat>=5.10.4",
     "pandas>=2.3.3",
     "plotly>=6.4.0",
     "pydantic>=2.12.4",
@@ -19,17 +35,58 @@ dependencies = [
     "torch>=2.9.0",
     "torchvision>=0.24.0",
     "tqdm>=4.67.1",
-    "transformers>=4.57.1",
-    "ucimlrepo>=0.0.7",
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "black>=22.0.0",
+    "isort>=5.10.0",
+    "flake8>=4.0.0",
+    "mypy>=0.950",
+    "pre-commit>=2.17.0",
+    "nbformat>=5.10.4",
+    "ucimlrepo>=0.0.7",
+]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.0",
+    "mkdocstrings>=0.30.1",
+    "mkdocstrings-python>=1.19.0",
+    "mkdocs-api-autonav>=0.4.0",
+]
+all = [
+    "neural-blueprints[dev,docs]",
+]
+
+[project.urls]
+Homepage = "https://github.com/elnukakujo/neural-blueprints"
+Documentation = "https://neural-blueprints.readthedocs.io"
+Repository = "https://github.com/elnukakujo/neural-blueprints"
+"Bug Tracker" = "https://github.com/elnukakujo/neural-blueprints/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/neural_blueprints"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/README.md",
+    "/LICENSE",
+]
+exclude = [
+    "/.git",
+    "/.github",
+    "/__pycache__",
+    "*.pyc",
+]
+
 [[tool.uv.index]]
 url = "https://pypi.org/simple"
 default = true
+
+# Black configuration
+[tool.black]
+line-length = 100
+target-version = ['py312']

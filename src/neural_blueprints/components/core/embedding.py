@@ -23,7 +23,7 @@ class EmbeddingLayer(nn.Module):
             x (torch.Tensor): Input tensor of shape (batch_size, sequence_length).
         
         Returns:
-            torch.Tensor: Output tensor of shape (batch_size, sequence_length, embedding_dim).
+            Output tensor of shape (batch_size, sequence_length, embedding_dim).
         """
         return self.embedding(x.long())
     
@@ -31,9 +31,7 @@ class PatchEmbeddingLayer(nn.Module):
     """Patch Embedding layer component.
     
     Args:
-        config (EmbeddingLayerConfig): Configuration for the patch embedding layer.
-        patch_size (int): Size of each patch.
-        in_channels (int): Number of input channels.
+        config (PatchEmbeddingLayerConfig): Configuration for the patch embedding layer.
     """
     def __init__(self, config: PatchEmbeddingLayerConfig):
         super(PatchEmbeddingLayer, self).__init__()
@@ -54,7 +52,7 @@ class PatchEmbeddingLayer(nn.Module):
             x (torch.Tensor): Input tensor of shape (batch_size, in_channels, height, width).
         
         Returns:
-            torch.Tensor: Output tensor of shape (batch_size, num_patches, embedding_dim).
+            Output tensor of shape (batch_size, num_patches, embedding_dim).
         """
         x = self.embedding(x)  # (batch_size, embedding_dim, H/patch_size, W/patch_size)
         x = x.flatten(2)      # (batch_size, embedding_dim, num_patches)

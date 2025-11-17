@@ -8,13 +8,19 @@ class ReshapeLayer(nn.Module):
     
     Args:
         config (ReshapeLayerConfig): Configuration for the reshape layer.
-            - shape (tuple of int): The target shape to reshape the input tensor to, 
-              excluding the batch dimension.
     """
     def __init__(self, config: ReshapeLayerConfig):
         super(ReshapeLayer, self).__init__()
         self.target_shape = config.shape
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the reshape layer.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, ...).
+        
+        Returns:
+            Reshaped tensor of shape (batch_size, *target_shape).
+        """
         batch_size = x.size(0)
         return x.view(batch_size, *self.target_shape)

@@ -2,7 +2,7 @@ import torch
 from torchvision import datasets, transforms
 
 from neural_blueprints.architectures.autoencoder import VariationalAutoEncoder
-from neural_blueprints.config import VariationalAutoEncoderConfig, ConvLayerConfig, DenseLayerConfig, ReshapeLayerConfig, TrainerConfig
+from neural_blueprints.config import AutoEncoderConfig, ConvLayerConfig, DenseLayerConfig, ReshapeLayerConfig, TrainerConfig
 from neural_blueprints.utils import Trainer, get_device, image_plot
 
 # ----------------------------
@@ -17,7 +17,7 @@ test_dataset = datasets.MNIST(root='./data', train=False, download=True, transfo
 
 latent_dim = 20
 
-vae_config = VariationalAutoEncoderConfig(
+vae_config = AutoEncoderConfig(
     encoder_layer_types=['conv2d', 'conv2d', 'flatten', 'dense', 'dense'],
     encoder_layer_configs=[
         ConvLayerConfig(in_channels=1, out_channels=32, kernel_size=3, stride=2, padding=1),    # 28x28 → 14x14

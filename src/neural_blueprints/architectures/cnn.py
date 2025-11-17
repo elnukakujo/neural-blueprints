@@ -6,7 +6,11 @@ from ..config import CNNConfig
 from ..utils import get_activation, get_block
 
 class CNN(nn.Module):
-    """A simple Convolutional Neural Network (CNN) architecture."""
+    """A simple Convolutional Neural Network (CNN) architecture.
+    
+    Args:
+        config (CNNConfig): Configuration for the CNN model.
+    """
     def __init__(self, config: CNNConfig):
         super(CNN, self).__init__()
         self.config = config
@@ -31,4 +35,12 @@ class CNN(nn.Module):
         return self.config
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the CNN.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            Output tensor after passing through the CNN.
+        """
         return self.network(x)

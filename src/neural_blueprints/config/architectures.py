@@ -2,11 +2,20 @@ from typing import List, Tuple, Optional, Any, Dict
 from pydantic import BaseModel, model_validator, Field
 import numpy as np
 
-from ..config.core import NormalizationConfig
-from ..config.composite import GeneratorConfig, DiscriminatorConfig, TransformerDecoderConfig, TransformerEncoderConfig
+from .core import NormalizationConfig
+from .composite import GeneratorConfig, DiscriminatorConfig, TransformerDecoderConfig, TransformerEncoderConfig
 
 class MLPConfig(BaseModel):
-    """Configuration for a Multi-Layer Perceptron (MLP) architecture."""
+    """Configuration for a Multi-Layer Perceptron (MLP) architecture.
+    
+    Args:
+        input_dim (int): Dimension of the input features.
+        hidden_dims (List[int]): List of hidden layer dimensions.
+        output_dim (int): Dimension of the output features.
+        normalization (Optional[str]): Normalization to apply after each layer.
+        activation (Optional[str]): Activation function to apply after each layer.
+        final_activation (Optional[str]): Activation function to apply after the final layer.
+    """
 
     input_dim: int
     hidden_dims: List[int]
@@ -30,7 +39,14 @@ class MLPConfig(BaseModel):
         return self
     
 class CNNConfig(BaseModel):
-    """Configuration for a Convolutional Neural Network (CNN) architecture."""
+    """Configuration for a Convolutional Neural Network (CNN) architecture.
+    
+    Args:
+        layer_types (list of str): List of layer types in the CNN.
+        layer_configs (list of BaseModel): List of configurations for each layer.
+        feedforward_config (BaseModel): Configuration for the feedforward network after convolutional layers.
+        final_activation (Optional[str]): Activation function to apply after the final layer.
+    """
 
     layer_types: List[str]
     layer_configs: List[BaseModel]
@@ -47,7 +63,13 @@ class CNNConfig(BaseModel):
         return self
     
 class RNNConfig(BaseModel):
-    """Configuration for a Recurrent Neural Network (RNN) architecture."""
+    """Configuration for a Recurrent Neural Network (RNN) architecture.
+    
+    Args:
+        rnn_unit_config (BaseModel): Configuration for the RNN unit (e.g. RNN, LSTM, GRU) including parameters like hidden size, number of layers, etc.
+        output_dim (int): Dimension of the output features.
+        final_activation (Optional[str]): Activation function to apply to the output.
+    """
 
     rnn_unit_config: BaseModel
     output_dim: int
@@ -62,7 +84,14 @@ class RNNConfig(BaseModel):
         return self
     
 class AutoEncoderConfig(BaseModel):
-    """Configuration for an AutoEncoder architecture."""
+    """Configuration for an AutoEncoder architecture.
+    
+    Args:
+        encoder_layer_types (list of str): List of layer types for the encoder.
+        encoder_layer_configs (list of BaseModel): List of configurations for each encoder layer.
+        decoder_layer_types (list of str): List of layer types for the decoder.
+        decoder_layer_configs (list of BaseModel): List of configurations for each decoder layer.
+    """
 
     encoder_layer_types: List[str]
     encoder_layer_configs: List[BaseModel]
@@ -77,23 +106,13 @@ class AutoEncoderConfig(BaseModel):
             raise ValueError("Length of decoder_layer_types must match length of decoder_layer_configs")
         return self
     
-class VariationalAutoEncoderConfig(AutoEncoderConfig):
-    """Configuration for a Variational AutoEncoder (VAE) architecture."""
-
-    reconstruction_factor: float = Field(1.0, ge=0.0)
-    kl_divergence_factor: float = Field(1.0, ge=0.0)
-
-    @model_validator(mode='after')
-    def _validate(self):
-        if self.reconstruction_factor < 0.0:
-            raise ValueError("reconstruction_factor must be non-negative")
-        if self.kl_divergence_factor < 0.0:
-            raise ValueError("kl_divergence_factor must be non-negative")
-
-        return self
-    
 class GANConfig(BaseModel):
-    """Configuration for a Generative Adversarial Network (GAN) architecture."""
+    """Configuration for a Generative Adversarial Network (GAN) architecture.
+    
+    Args:
+        generator_config (GeneratorConfig): Configuration for the generator model.
+        discriminator_config (DiscriminatorConfig): Configuration for the discriminator model.
+    """
 
     generator_config: GeneratorConfig
     discriminator_config: DiscriminatorConfig
@@ -103,7 +122,13 @@ class GANConfig(BaseModel):
         return self
 
 class TransformerConfig(BaseModel):
-    """Configuration for a Transformer architecture."""
+    """Configuration for a Transformer architecture.
+    
+    Args:
+        encoder_config (TransformerEncoderConfig): Configuration for the transformer encoder.
+        decoder_config (TransformerDecoderConfig): Configuration for the transformer decoder.
+        output_dim (Optional[int]): Dimension of the output features. If None, uses decoder hidden_dim.
+    """
 
     encoder_config: TransformerEncoderConfig
     decoder_config: TransformerDecoderConfig
@@ -114,7 +139,17 @@ class TransformerConfig(BaseModel):
         return self
     
 class TabularBERTConfig(BaseModel):
-    """Configuration for a BERT-style architecture."""
+    """Configuration for a BERT-style architecture.
+    
+    Args:
+        cardinalities (List[int]): List of cardinalities for each feature (1 for continuous).
+        encoder_config (TransformerEncoderConfig): Configuration for the transformer encoder.
+        dropout (float): Dropout rate between 0.0 and 1.0.
+        with_input_projection (bool): Whether to use input projections for each feature.
+        with_output_projection (bool): Whether to use output projections for masked attribute prediction.
+        final_normalization (Optional[NormalizationConfig]): Normalization to apply after the final layer.
+        final_activation (Optional[str]): Activation function to apply after the final layer.
+    """
 
     cardinalities: list[int]
     encoder_config: TransformerEncoderConfig

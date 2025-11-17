@@ -141,6 +141,7 @@ class ResidualLayerConfig(BaseModel):
     """Configuration for a residual layer.
     
     Args:
+        layer_type (str): Type of the layer to be wrapped. Options: 'dense', 'conv', 'rnn', 'attention'.
         layer_config (BaseModel): Configuration of the layer to be wrapped with residual connection.
     """
     layer_type: str
@@ -158,6 +159,7 @@ class EmbeddingLayerConfig(BaseModel):
     Args:
         num_embeddings (int): Size of the vocabulary.
         embedding_dim (int): Dimension of the embeddings.
+        padding_idx (int | None): If specified, the entries at padding_idx do not contribute to the gradient; therefore, the embedding vector at padding_idx is not updated during training.
     """
     num_embeddings: int
     embedding_dim: int
@@ -179,6 +181,7 @@ class PatchEmbeddingLayerConfig(BaseModel):
     Args:
         embedding_dim (int): Dimension of the embeddings.
         patch_size (int): Size of each patch.
+        in_channels (int): Number of input channels.
     """
     embedding_dim: int
     patch_size: int

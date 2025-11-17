@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import numpy as np
+from typing import List
 
 from ..components.composite import TransformerEncoder, TransformerDecoder, FeedForwardNetwork
 from ..components.core import ProjectionLayer, EmbeddingLayer
@@ -8,6 +8,11 @@ from ..config import TransformerConfig, TabularBERTConfig, EmbeddingLayerConfig,
 from ..utils import get_normalization
 
 class Transformer(nn.Module):
+    """A simple Transformer architecture with encoder and decoder.
+    
+    Args:
+        config (TransformerConfig): Configuration for the Transformer model.
+    """
     def __init__(self, config: TransformerConfig):
         super().__init__()
         self.config = config
@@ -26,9 +31,14 @@ class Transformer(nn.Module):
         return self.config
 
     def forward(self, src: torch.Tensor, tgt: torch.Tensor) -> torch.Tensor:
-        """
-        src: (batch_size, src_seq_len, input_dim)
-        tgt: (batch_size, tgt_seq_len, input_dim)
+        """Forward pass through the Transformer.
+
+        Args:
+            src (torch.Tensor): Source input tensor of shape (batch_size, src_seq_len, input_dim).
+            tgt (torch.Tensor): Target input tensor of shape (batch_size, tgt_seq_len, input_dim).
+
+        Returns:
+            Output tensor of shape (batch_size, tgt_seq_len, output_dim).
         """
         # Encode
         memory = self.encoder(src)  # (batch_size, src_seq_len, hidden_dim)
@@ -41,14 +51,16 @@ class Transformer(nn.Module):
         return out
     
 class TabularBERT(nn.Module):
+    """A BERT-style model for masked attribute inference on tabular data:
+        - Embeddings for categorical features
+        - Pass-through for continuous features
+        - TransformerEncoder
+        - Optional feedforward head for masked attribute prediction
+
+    Args:
+        config (TabularBERTConfig): Configuration for the Tabular BERT model.
     """
-    A BERT-style model for masked attribute inference on tabular data:
-    - Embeddings for categorical features
-    - Pass-through for continuous features
-    - TransformerEncoder
-    - Optional feedforward head for masked attribute prediction
-    """
-    def __init__(self, config: BERTConfig):
+    def __init__(self, config: TabularBERTConfig):
         super().__init__()
         self.config = config
 
@@ -110,7 +122,15 @@ class TabularBERT(nn.Module):
         print(self)
         return self.config
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor | List[torch.Tensor]:
+        """Forward pass through the Tabular BERT model.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, seq_len).
+
+        Returns:
+            List of output tensors for each feature or output tensor of shape (batch_size, seq_len, hidden_dim).
+        """
         B, L = x.shape
         # ---- Split categorical and continuous features ----
         
@@ -151,8 +171,7 @@ class TabularBERT(nn.Module):
         if self.with_output_projection:
             predictions = []
             for column_idx in range(self.seq_len):
-                predictions.append(self.output_projections[column_idx](x_embed[:, column_idx]))
-
+                predictions.append(self.output_projections[column_idx](x_embed[:, column_idx])) # shape: (batch, output_dim)
             return predictions
         else:
             return x_embed

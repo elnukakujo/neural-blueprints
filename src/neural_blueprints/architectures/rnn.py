@@ -6,7 +6,11 @@ from ..config import RNNConfig
 from ..utils import get_activation
 
 class RNN(nn.Module):
-    """A simple Recurrent Neural Network (RNN) architecture."""
+    """A simple Recurrent Neural Network (RNN) architecture.
+
+    Args:
+        config (RNNConfig): Configuration for the RNN model.
+    """
     def __init__(self, config: RNNConfig):
         super(RNN, self).__init__()
         self.config = config
@@ -25,5 +29,14 @@ class RNN(nn.Module):
         return self.config
     
     def forward(self, x: torch.Tensor, hidden: torch.Tensor = None) -> torch.Tensor:
+        """Forward pass through the RNN.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+            hidden (torch.Tensor, optional): Hidden state tensor. Defaults to None.
+            
+        Returns:
+            Output tensor after passing through the RNN and the updated hidden state.
+        """
         rnn_out, hidden = self.rnn(x, hidden)
         return self.network(rnn_out), hidden

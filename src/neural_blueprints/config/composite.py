@@ -4,7 +4,15 @@ from pydantic import BaseModel, model_validator, Field
 from .core import ProjectionLayerConfig, NormalizationConfig
 
 class FeedForwardNetworkConfig(BaseModel):
-    """Configuration for a feedforward neural network."""
+    """Configuration for a feedforward neural network.
+    
+    Args:
+       input_dim (int): Size of the input features.
+       hidden_dims (List[int]): List of hidden layer sizes.
+       output_dim (int): Size of the output features.
+       normalization (Optional[str]): Normalization type to use in dense layers.
+       activation (Optional[str]): Activation function to use in dense layers.
+    """
 
     input_dim: int
     hidden_dims: List[int]
@@ -25,7 +33,14 @@ class FeedForwardNetworkConfig(BaseModel):
         return self
     
 class EncoderConfig(BaseModel):
-    """Configuration for an encoder composed of multiple layers."""
+    """Configuration for an encoder composed of multiple layers.
+
+    Args:
+        layer_types (List[str]): List of layer types.
+        layer_configs (List[BaseModel]): List of layer configurations.
+        projection (Optional[ProjectionLayerConfig]): Optional projection layer configuration.
+        final_activation (Optional[str]): Optional final activation function.
+    """
 
     layer_types: List[str]
     layer_configs: List[BaseModel]
@@ -48,7 +63,14 @@ class EncoderConfig(BaseModel):
         return self
     
 class DecoderConfig(BaseModel):
-    """Configuration for a decoder composed of multiple layers."""
+    """Configuration for a decoder composed of multiple layers.
+    
+    Args:
+        layer_types (List[str]): List of layer types.
+        layer_configs (List[BaseModel]): List of layer configurations.
+        projection (Optional[ProjectionLayerConfig]): Optional projection layer configuration.
+        final_activation (Optional[str]): Optional final activation function.
+    """
 
     layer_types: List[str]
     layer_configs: List[BaseModel]
@@ -79,7 +101,14 @@ class DiscriminatorConfig(EncoderConfig):
     pass
 
 class TransformerEncoderConfig(BaseModel):
-    """Configuration for a Transformer encoder."""
+    """Configuration for a Transformer encoder.
+
+    Args:
+        input_dim (int): Size of the input features.
+        hidden_dim (int): Size of the hidden layer.
+        num_layers (int): Number of layers.
+        num_heads (int): Number of attention heads.
+    """
 
     input_dim: int
     hidden_dim: int
@@ -112,7 +141,18 @@ class TransformerEncoderConfig(BaseModel):
         return self
     
 class TransformerDecoderConfig(BaseModel):
-    """Configuration for a Transformer decoder."""
+    """Configuration for a Transformer decoder.
+    
+    Args:
+        input_dim (int): Size of the input features.
+        hidden_dim (int): Size of the hidden layer.
+        num_layers (int): Number of layers.
+        num_heads (int): Number of attention heads.
+        dropout (float): Dropout rate.
+        projection (Optional[ProjectionLayerConfig]): Optional projection layer configuration.
+        final_normalization (Optional[NormalizationConfig]): Optional final normalization configuration.
+        final_activation (Optional[str]): Optional final activation function.
+    """
 
     input_dim: int
     hidden_dim: int

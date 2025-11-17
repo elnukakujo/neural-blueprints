@@ -7,6 +7,11 @@ from ...config import DecoderConfig, TransformerDecoderConfig
 from ...utils import get_block, get_activation, get_normalization
 
 class Decoder(nn.Module):
+    """A modular decoder that builds a sequence of layers based on the provided configuration.
+
+    Args:
+        config (DecoderConfig): Configuration for the decoder.
+    """
     def __init__(self, config: DecoderConfig):
         super(Decoder, self).__init__()
 
@@ -29,10 +34,23 @@ class Decoder(nn.Module):
         self.network = nn.Sequential(*layers)
                 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the decoder.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+        
+        Returns:
+            Output tensor after passing through the decoder.
+        """
         return self.network(x)
     
 class TransformerDecoder(nn.Module):
     def __init__(self, config: TransformerDecoderConfig):
+        """Initialize the TransformerDecoder.
+
+        Args:
+            config (TransformerDecoderConfig): Configuration for the transformer decoder.
+        """
         super().__init__()
         self.input_dim = config.input_dim
         self.hidden_dim = config.hidden_dim
@@ -67,9 +85,14 @@ class TransformerDecoder(nn.Module):
         self.final_act = get_activation(self.final_activation)
 
     def forward(self, x: torch.Tensor, memory: torch.Tensor) -> torch.Tensor:
-        """
-        x: (batch_size, tgt_seq_len, input_dim)
-        memory: (batch_size, src_seq_len, hidden_dim)
+        """Forward pass through the Transformer decoder.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, seq_len, input_dim).
+            memory (torch.Tensor): Memory tensor from the encoder of shape (batch_size, mem_seq_len, hidden_dim).
+
+        Returns:
+            Output tensor of shape (batch_size, seq_len, hidden_dim).
         """
         x = self.input_proj(x)
 

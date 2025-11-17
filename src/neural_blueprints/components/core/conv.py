@@ -1,8 +1,12 @@
 import torch
 import torch.nn as nn
+from abc import abstractmethod
+
 from ...config import ConvLayerConfig
 from ...utils import get_activation
 
+
+@abstractmethod
 class BaseConvLayer(nn.Module):
     def __init__(self, config: ConvLayerConfig):
         super(BaseConvLayer, self).__init__()
@@ -20,6 +24,11 @@ class BaseConvLayer(nn.Module):
         self.activation = config.activation
 
 class Conv2dLayer(BaseConvLayer):
+    """A 2D convolutional layer with optional batchnorm and activation.
+    
+    Args:
+        config (ConvLayerConfig): Configuration for the convolutional layer.
+    """
     def __init__(
         self,
         config: ConvLayerConfig
@@ -48,29 +57,27 @@ class Conv2dLayer(BaseConvLayer):
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the 2D convolutional layer.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, in_channels, height, width).
+
+        Returns:
+            Output tensor of shape (batch_size, out_channels, height, width).
+        """
         return self.conv(x)
     
 
 class Conv1dLayer(BaseConvLayer):
+    """A 1D convolutional layer with optional batchnorm and activation.
+    
+    Args:
+        config (ConvLayerConfig): Configuration for the convolutional layer.
+    """
     def __init__(
         self,
         config: ConvLayerConfig
     ):
-        """
-        1D convolutional layer with optional batchnorm and activation.
-
-        Args:
-            in_channels (int)
-            out_channels (int)
-            kernel_size (int)
-            stride (int)
-            padding (int or None): if None, uses "same" padding (floor((k-1)/2))
-            dilation (int)
-            groups (int)
-            bias (bool)
-            activation (str | None)
-            batch_norm (bool)
-        """
         super().__init__(config)
         if self.padding is None:
             self.padding = (self.kernel_size - 1) // 2
@@ -94,9 +101,22 @@ class Conv1dLayer(BaseConvLayer):
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the 1D convolutional layer.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, in_channels, length).
+            
+        Returns:
+            Output tensor of shape (batch_size, out_channels, length).
+        """
         return self.conv(x)
     
 class Conv2dTransposeLayer(BaseConvLayer):
+    """A 2D transposed convolutional layer with optional batchnorm and activation.
+    
+    Args:
+        config (ConvLayerConfig): Configuration for the convolutional layer.
+    """
     def __init__(
         self,
         config: ConvLayerConfig
@@ -126,29 +146,27 @@ class Conv2dTransposeLayer(BaseConvLayer):
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the 2D transposed convolutional layer.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, in_channels, height, width).
+            
+        Returns:
+            Output tensor of shape (batch_size, out_channels, height, width).
+        """
         return self.conv(x)
     
 
 class Conv1dTransposeLayer(BaseConvLayer):
+    """A 1D transposed convolutional layer with optional batchnorm and activation.
+    
+    Args:
+        config (ConvLayerConfig): Configuration for the convolutional layer.
+    """
     def __init__(
         self,
         config: ConvLayerConfig
     ):
-        """
-        1D convolutional layer with optional batchnorm and activation.
-
-        Args:
-            in_channels (int)
-            out_channels (int)
-            kernel_size (int)
-            stride (int)
-            padding (int or None): if None, uses "same" padding (floor((k-1)/2))
-            dilation (int)
-            groups (int)
-            bias (bool)
-            activation (str | None)
-            batch_norm (bool)
-        """
         super().__init__(config)
         if self.padding is None:
             self.padding = (self.kernel_size - 1) // 2
@@ -173,4 +191,12 @@ class Conv1dTransposeLayer(BaseConvLayer):
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the 1D transposed convolutional layer.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, in_channels, length).
+        
+        Returns:
+            Output tensor of shape (batch_size, out_channels, length).
+        """
         return self.conv(x)

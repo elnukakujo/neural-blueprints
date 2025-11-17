@@ -8,10 +8,6 @@ class DenseLayer(nn.Module):
     
     Args:
         config (DenseLayerConfig): Configuration for the dense layer.
-            - input_dim (int): Size of each input sample.
-            - output_dim (int): Size of each output sample.
-            - activation (str, optional): Activation function to apply. 
-              Supported: 'relu', 'tanh', 'sigmoid', 'gelu'. Default is None (no activation).
     """
     def __init__(self, config: DenseLayerConfig):
         super(DenseLayer, self).__init__()
@@ -24,6 +20,14 @@ class DenseLayer(nn.Module):
         self.activation = get_activation(config.activation)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the dense layer.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, input_dim).
+
+        Returns:
+            Output tensor of shape (batch_size, output_dim).
+        """
         x = self.linear(x.float())
         x = self.normalization(x)
         x = self.activation(x)

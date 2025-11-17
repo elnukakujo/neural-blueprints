@@ -5,7 +5,11 @@ from ..components.composite import Generator, Discriminator
 from ..config import GANConfig
 
 class GAN(nn.Module):
-    """A simple Generative Adversarial Network (GAN) architecture."""
+    """A simple Generative Adversarial Network (GAN) architecture.
+    
+    Args:
+        config (GANConfig): Configuration for the GAN model.
+    """
     def __init__(self, config: GANConfig):
         super(GAN, self).__init__()
         self.config = config
@@ -25,7 +29,23 @@ class GAN(nn.Module):
         return self.config
 
     def generate(self, z: torch.Tensor) -> torch.Tensor:
+        """Generate data from latent representation.
+
+        Args:
+            z (torch.Tensor): Latent representation tensor.
+        
+        Returns:
+            Generated data tensor.
+        """
         return self.generator(z)
     
     def discriminate(self, x: torch.Tensor) -> torch.Tensor:
+        """Discriminate real or generated data.
+
+        Args:
+            x (torch.Tensor): Input data tensor.
+        
+        Returns:
+            Discrimination result tensor.
+        """
         return self.discriminator(x)

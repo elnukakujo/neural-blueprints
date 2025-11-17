@@ -6,7 +6,11 @@ from ..config import MLPConfig
 from ..utils import get_activation
 
 class MLP(nn.Module):
-    """A simple Multi-Layer Perceptron (MLP) architecture."""
+    """A simple Multi-Layer Perceptron (MLP) architecture.
+    
+    Args:
+        config (MLPConfig): Configuration for the MLP model.
+    """
     def __init__(self, config: MLPConfig):
         super(MLP, self).__init__()
         self.config = config
@@ -21,4 +25,12 @@ class MLP(nn.Module):
         return self.config
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the MLP.
+        
+        Args:
+            x (torch.Tensor): Input tensor.
+            
+        Returns:
+            Output tensor after passing through the MLP.
+        """
         return self.network(x)

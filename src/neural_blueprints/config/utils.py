@@ -2,6 +2,17 @@ from typing import Optional
 from pydantic import BaseModel, model_validator
 
 class TrainerConfig(BaseModel):
+    """Configuration schema for training hyperparameters and settings.
+    
+    Args:
+        learning_rate (float): Initial learning rate for the optimizer.
+        weight_decay (float): Weight decay (L2 regularization) factor.
+        batch_size (int): Number of samples per training batch.
+        save_weights_path (Optional[str]): Path to save model weights. If None, weights are not saved.
+        training_type (str): Type of training to perform. Options are 'reconstruction', 'masked_label', 'label'.
+        criterion (str): Loss function to use. Options depend on training_type.
+        optimizer (str): Optimizer to use for training. Options include 'adam', 'sgd', etc.
+    """
     learning_rate: float = 1e-3
     weight_decay: float = 0.0
     batch_size: int = 32

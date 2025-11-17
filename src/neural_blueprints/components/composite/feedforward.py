@@ -5,6 +5,11 @@ from ..core import DenseLayer
 from ...config import DenseLayerConfig, FeedForwardNetworkConfig
 
 class FeedForwardNetwork(nn.Module):
+    """A feedforward neural network composed of multiple dense layers.
+
+    Args:
+        config (FeedForwardNetworkConfig): Configuration for the feedforward network.
+    """
     def __init__(self, config: FeedForwardNetworkConfig):
         super(FeedForwardNetwork, self).__init__()
 
@@ -28,4 +33,12 @@ class FeedForwardNetwork(nn.Module):
         self.network = nn.Sequential(*layers)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the feedforward network.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, input_dim).
+
+        Returns:
+            Output tensor of shape (batch_size, output_dim).
+        """
         return self.network(x)

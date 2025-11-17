@@ -7,6 +7,11 @@ from ...config import EncoderConfig, TransformerEncoderConfig
 from ...utils import get_block, get_activation
 
 class Encoder(nn.Module):
+    """A modular encoder that builds a sequence of layers based on the provided configuration.
+
+    Args:
+        config (EncoderConfig): Configuration for the encoder.
+    """
     def __init__(self, config: EncoderConfig):
         super(Encoder, self).__init__()
 
@@ -30,25 +35,26 @@ class Encoder(nn.Module):
         self.network = nn.Sequential(*layers)
                 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the encoder.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            Output tensor after passing through the encoder.
+        """
         return self.network(x)
     
 class TransformerEncoder(nn.Module):
     """
     A clean Transformer Encoder block suitable for:
+
     - Generic Transformer encoder
     - Encoder-decoder transformers (as the encoder)
     - BERT-style models (encoder-only)
 
     Args:
         config (TransformerEncoderConfig): Configuration for the Transformer Encoder.
-            - input_dim: Dimension of the input features.
-            - hidden_dim: Dimension of the hidden features.
-            - num_layers: Number of Transformer encoder layers.
-            - num_heads: Number of attention heads.
-            - dropout: Dropout rate for the layers.
-            - projection: Optional projection layer configuration to map input_dim to hidden_dim.
-            - final_normalization: Optional normalization configuration for the final output.
-            - final_activation: Optional activation function for the final output.
     """
     def __init__(self, config: TransformerEncoderConfig):
         super().__init__()
@@ -84,8 +90,14 @@ class TransformerEncoder(nn.Module):
         self.final_act = get_activation(config.final_activation)
 
     def forward(self, x: torch.Tensor, attn_mask: torch.Tensor = None) -> torch.Tensor:
-        """
-        x: (batch, seq, input_dim)
+        """Forward pass through the Transformer encoder.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, seq_len, input_dim).
+            attn_mask (torch.Tensor, optional): Attention mask tensor. Defaults to None.
+
+        Returns:
+            Output tensor of shape (batch_size, seq_len, hidden_dim).
         """
         # Optionally project to hidden dimension
         x = self.input_proj(x)
