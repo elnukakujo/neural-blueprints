@@ -130,6 +130,19 @@ trainer.train(train_dataset, val_dataset, epochs=5)
 
 ---
 
+## Documentation
+Neural Blueprints has a mkdocs documentation located in the `docs/` folder.
+To open it, install the dependencies and execute this command in your terminal
+```bash
+mkdocs serve
+```
+or with `uv`
+```bash
+uv run mkdocs serve
+```
+
+---
+
 ## 🧱 Philosophy
 
 Neural Blueprints follows three core principles:
