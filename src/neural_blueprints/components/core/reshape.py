@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from ...config import ReshapeLayerConfig
+from ...config.components.core import ReshapeLayerConfig
 
 class ReshapeLayer(nn.Module):
     """A layer that reshapes its input tensor to a specified shape.

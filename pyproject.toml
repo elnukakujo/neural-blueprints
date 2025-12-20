@@ -27,6 +27,7 @@ classifiers = [
 keywords = ["deep-learning", "neural-networks", "pytorch", "machine-learning", "ai"]
 requires-python = ">=3.12"
 dependencies = [
+    "dotenv>=0.9.9",
     "matplotlib>=3.10.7",
     "pandas>=2.3.3",
     "plotly>=6.4.0",

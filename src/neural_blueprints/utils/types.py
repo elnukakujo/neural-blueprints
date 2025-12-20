@@ -1,19 +1,19 @@
 import pandas as pd
 import numpy as np
 import torch
-from typing import Any, List 
+from typing import Any 
 
-def infer_types(data: Any) -> List[str]:
+def infer_types(data: Any) -> dict[str, str]:
     """
-    Infers column types and returns a DataFrame with correct dtypes.
+    Infers column types and returns a list with correct dtypes.
     
-    Types returned: 'categorical', 'discrete', 'continuous'.
+    Types returned: 'category', 'int32', 'float32'.
     
     Args:
         data: The input data (pd.DataFrame, pd.Series, list, or torch.Tensor)
     
     Returns:
-        types_list: List of inferred types for each column.
+        types_dict: Dictionary of inferred types for each column name/index.
     """
     
     # Convert input to DataFrame
@@ -29,8 +29,7 @@ def infer_types(data: Any) -> List[str]:
     else:
         raise TypeError(f"Unsupported data type for type inference: {type(data)}")
 
-    types_list = []
-    
+    types_dict = {}
     
     for col in df.columns:
         col_data = df[col].to_numpy()
@@ -38,12 +37,14 @@ def infer_types(data: Any) -> List[str]:
 
         if np.issubdtype(col_data.dtype, np.number):
             # Detect discrete vs continuous
-            mask_int = np.isclose(col_data, np.round(col_data), atol=1e-8)
+            mask_int = np.isclose(col_data, np.round(col_data), atol=1e-12)
             if np.all(mask_int):
-                types_list.append("int32")
+                types_dict[col] = "int32"
             else:
-                types_list.append("float32")
+                types_dict[col] = "float32"
+        elif np.issubdtype(col_data.dtype, np.str_) or np.issubdtype(col_data.dtype, np.object_) or np.issubdtype(col_data.dtype, np.bool_):
+            types_dict[col] = "category"
         else:
-            types_list.append("category")
+            raise ValueError(f"Unrecognized data type in column {col}: {col_data.dtype}")
     
-    return types_list
+    return types_dict

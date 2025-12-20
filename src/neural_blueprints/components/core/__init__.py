@@ -8,6 +8,7 @@ from .embedding import EmbeddingLayer, PatchEmbeddingLayer
 from .pool import Pooling1dLayer, Pooling2dLayer
 from .projection import ProjectionLayer
 from .reshape import ReshapeLayer
+from .norm import NormalizationLayer
 
 __all__ = [
     DenseLayer,
@@ -24,4 +25,5 @@ __all__ = [
     Pooling2dLayer,
     ProjectionLayer,
     ReshapeLayer,
+    NormalizationLayer,
 ]

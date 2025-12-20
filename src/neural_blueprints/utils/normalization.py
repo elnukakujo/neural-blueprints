@@ -1,8 +1,7 @@
-import torch
 import torch.nn as nn
 from typing import Optional
 
-from ..config import NormalizationConfig
+from ..config.components.core import NormalizationConfig
 
 def get_normalization(config: Optional[NormalizationConfig]) -> nn.Module:
     """Returns a normalization layer based on the specified type.

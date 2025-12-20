@@ -2,7 +2,8 @@ import torch
 from torch import nn
 
 from ..core import DenseLayer
-from ...config import DenseLayerConfig, FeedForwardNetworkConfig
+from ...config.components.composite import FeedForwardNetworkConfig
+from ...config.components.core import DenseLayerConfig
 
 class FeedForwardNetwork(nn.Module):
     """A feedforward neural network composed of multiple dense layers.
