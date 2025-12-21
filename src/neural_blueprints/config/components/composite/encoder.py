@@ -52,7 +52,6 @@ class TransformerEncoderConfig(BaseModel):
     hidden_dim: int
     num_layers: int
     num_heads: int
-    normalization: Optional[str] = None
     activation: Optional[str] = None
     dropout_p: Optional[float] = None
     final_activation: Optional[str] = None

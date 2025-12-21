@@ -4,7 +4,7 @@ import torch.nn as nn
 from ... import FeedForwardNetwork
 from ....core import EmbeddingLayer, DenseLayer
 from .....config.components.composite import FeedForwardNetworkConfig
-from .....config.components.composite.projections.input_projections import TabularInputProjectionConfig
+from .....config.components.composite.projections.input import TabularInputProjectionConfig
 from .....config.components.core import EmbeddingLayerConfig, DenseLayerConfig
 
 import logging

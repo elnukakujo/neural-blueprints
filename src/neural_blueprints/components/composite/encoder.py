@@ -65,7 +65,6 @@ class TransformerEncoder(nn.Module):
         self.hidden_dim = config.hidden_dim
         self.num_layers = config.num_layers
         self.num_heads = config.num_heads
-        self.normalization = config.normalization
         self.activation = config.activation
         self.dropout_p = config.dropout_p
         self.final_activation = config.final_activation
@@ -73,22 +72,16 @@ class TransformerEncoder(nn.Module):
         # Transformer Encoder stack (self-attention only)
         self.layers = nn.ModuleList([])
         for _ in range(self.num_layers):
-            layer = nn.Sequential(
+            self.layers.append(
                 nn.TransformerEncoderLayer(
                     d_model=self.hidden_dim,
                     nhead=self.num_heads,
-                    dim_feedforward=self.hidden_dim * 4,
+                    dim_feedforward=self.hidden_dim,
                     dropout=self.dropout_p,
                     batch_first=True,
                     activation=self.activation
-                ),
-                NormalizationLayer(
-                    config=NormalizationLayerConfig(
-                        norm_type=self.normalization,
-                        num_features=self.hidden_dim
-                    )
                 )
-            )          
+            )
 
         self.final_act = get_activation(self.final_activation)
 

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, model_validator
 
 from ..components.core import NormalizationLayerConfig
@@ -25,26 +25,23 @@ class TabularBERTConfig(BaseModel):
     """Configuration for a BERT-style architecture.
     
     Args:
-        cardinalities (List[int]): List of cardinalities for each feature (1 for continuous).
-        encoder_config (TransformerEncoderConfig): Configuration for the transformer encoder.
-        dropout (float): Dropout rate between 0.0 and 1.0.
-        with_input_projection (bool): Whether to use input projections for each feature.
-        with_output_projection (bool): Whether to use output projections for masked attribute prediction.
-        final_activation (Optional[str]): Activation function to apply after the final layer.
+        cardinalities (List[int]): List of cardinalities for each categorical feature.
+        latent_dim (int): Dimension of the latent embeddings.
+        dropout_p (Optional[float]): Dropout probability. If None, no dropout is applied.
+        normalization (Optional[str]): Normalization layer type. If None, no normalization is applied.
+        activation (Optional[str]): Activation function type. If None, no activation is applied.
+        final_activation (Optional[str]): Final activation function type. If None, no final activation is applied.
     """
-
-    cardinalities: list[int]
-    encoder_config: TransformerEncoderConfig
-    dropout: float
-    with_input_projection: bool = True
-    with_output_projection: bool = True
+    cardinalities: List[int]
+    latent_dim: int
+    encoder_layers: int
+    dropout_p: Optional[float] = None
+    normalization: Optional[str] = None
+    activation: Optional[str] = None
     final_activation: Optional[str] = None
-
 
     @model_validator(mode='after')
     def _validate(self):
-        if self.dropout < 0.0 or self.dropout > 1.0:
-            raise ValueError("dropout must be between 0.0 and 1.0")
         if self.final_activation is not None and self.final_activation.lower() not in ('relu', 'tanh', 'sigmoid', 'softmax', 'gelu'):
             raise ValueError(f"Unsupported final_activation: {self.final_activation}. Supported: {'relu', 'tanh', 'sigmoid', 'softmax', 'gelu'}")
         return self

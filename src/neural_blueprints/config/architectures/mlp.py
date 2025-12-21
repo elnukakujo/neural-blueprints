@@ -1,8 +1,8 @@
 from typing import List, Optional
 from pydantic import BaseModel, model_validator
 
-from ..components.composite.projections.input_projections import TabularInputProjectionConfig
-from ..components.composite.projections.output_projections import TabularOutputProjectionConfig
+from ..components.composite.projections.input import TabularInputProjectionConfig
+from ..components.composite.projections.output import TabularOutputProjectionConfig
 
 class MLPConfig(BaseModel):
     """Configuration for a Multi-Layer Perceptron (MLP) architecture.

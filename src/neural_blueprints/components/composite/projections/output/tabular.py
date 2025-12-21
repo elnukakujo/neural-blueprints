@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from ... import FeedForwardNetwork
 from .....config.components.composite import FeedForwardNetworkConfig
-from .....config.components.composite.projections.output_projections import TabularOutputProjectionConfig
+from .....config.components.composite.projections.output import TabularOutputProjectionConfig
 
 import logging
 logger = logging.getLogger(__name__)

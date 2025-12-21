@@ -98,7 +98,7 @@ class TabularPreprocessor:
         
         return original_df, kwargs
 
-    def run(self, original_df: pd.DataFrame, verbose: bool = True, **kwargs) -> tuple[tuple[pd.DataFrame, ...], list[str], list[str]]:
+    def run(self, original_df: pd.DataFrame, verbose: bool = True, **kwargs) -> tuple[tuple[pd.DataFrame, ...] | pd.DataFrame, list[str], list[str]]:
         """
         Run the preprocessing pipeline on the original dataframe and any additional dataframes.
 
@@ -134,4 +134,6 @@ class TabularPreprocessor:
         original_df, kwargs = self.discrete_encoding(discrete_features, original_df, **kwargs)
         original_df, kwargs = self.continuous_scaling(continuous_features, original_df, **kwargs)
 
-        return tuple([original_df] + list(kwargs.values())), discrete_features, continuous_features
+        data = tuple([original_df] + list(kwargs.values())) if kwargs else original_df
+
+        return data, discrete_features, continuous_features
