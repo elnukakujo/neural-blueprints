@@ -1,6 +1,6 @@
 from pydantic import BaseModel, model_validator
 
-from ..composite import GeneratorConfig, DiscriminatorConfig
+from ..components.composite import GeneratorConfig, DiscriminatorConfig
 
 class GANConfig(BaseModel):
     """Configuration for a Generative Adversarial Network (GAN) architecture.

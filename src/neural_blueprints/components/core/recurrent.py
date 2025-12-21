@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from ...config import RecurrentUnitConfig
+
+from ...config.components.core import RecurrentUnitConfig
 
 class RecurrentUnit(nn.Module):
     """A recurrent unit layer that supports LSTM, GRU, and RNN.

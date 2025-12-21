@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from ..components.composite import FeedForwardNetwork
-from ..config import CNNConfig
+from ..config.architectures import CNNConfig
 from ..utils import get_activation, get_block
 
 class CNN(nn.Module):

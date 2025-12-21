@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from ..components.core import RecurrentUnit
-from ..config import RNNConfig
+from ..config.architectures import RNNConfig
 from ..utils import get_activation
 
 class RNN(nn.Module):

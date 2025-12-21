@@ -2,12 +2,13 @@ from .attention import AttentionLayerConfig
 from .conv import ConvLayerConfig
 from .dense import DenseLayerConfig
 from .embedding import EmbeddingLayerConfig, PatchEmbeddingLayerConfig
-from .norm import NormalizationConfig
+from .norm import NormalizationLayerConfig
 from .pool import PoolingLayerConfig
-from .projection import ProjectionLayerConfig
 from .recurrent import RecurrentUnitConfig
 from .reshape import ReshapeLayerConfig
 from .residual import ResidualLayerConfig
+from .flatten import FlattenLayerConfig
+from .dropout import DropoutLayerConfig
 
 __all__ = [
     AttentionLayerConfig,
@@ -15,10 +16,11 @@ __all__ = [
     DenseLayerConfig,
     EmbeddingLayerConfig,
     PatchEmbeddingLayerConfig,
-    NormalizationConfig,
+    NormalizationLayerConfig,
     PoolingLayerConfig,
-    ProjectionLayerConfig,
     RecurrentUnitConfig,
     ReshapeLayerConfig,
     ResidualLayerConfig,
+    FlattenLayerConfig,
+    DropoutLayerConfig,
 ]

@@ -1,5 +1,5 @@
 from .decoder import Decoder
-from ...config import GeneratorConfig
+from ...config.components.composite import GeneratorConfig
 
 class Generator(Decoder):
     """Generator model specialized from Decoder for GAN architectures.

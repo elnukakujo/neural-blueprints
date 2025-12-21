@@ -3,9 +3,11 @@ import torch.nn as nn
 from typing import List
 
 from ..components.composite import TransformerEncoder, TransformerDecoder, FeedForwardNetwork
-from ..components.core import ProjectionLayer, EmbeddingLayer
-from ..config import TransformerConfig, TabularBERTConfig, EmbeddingLayerConfig, NormalizationConfig, FeedForwardNetworkConfig
-from ..utils import get_normalization
+from ..components.core import EmbeddingLayer, NormalizationLayer
+
+from ..config.architectures import TransformerConfig, TabularBERTConfig
+from ..config.components.composite import FeedForwardNetworkConfig
+from ..config.components.core import EmbeddingLayerConfig, NormalizationLayerConfig
 
 class Transformer(nn.Module):
     """A simple Transformer architecture with encoder and decoder.
@@ -18,13 +20,6 @@ class Transformer(nn.Module):
         self.config = config
         self.encoder = TransformerEncoder(config.encoder_config)
         self.decoder = TransformerDecoder(config.decoder_config)
-        
-        # Optional final projection (e.g. to regression targets or vocab size)
-        self.output_dim = config.output_dim or config.decoder_config.hidden_dim
-        self.output_proj = ProjectionLayer(
-            input_dim=config.decoder_config.hidden_dim,
-            output_dim=self.output_dim
-        ) if self.output_dim != config.decoder_config.hidden_dim else nn.Identity()
 
     def blueprint(self):
         print(self)
@@ -45,10 +40,7 @@ class Transformer(nn.Module):
 
         # Decode (conditioned on memory)
         decoded = self.decoder(tgt, memory)  # (batch_size, tgt_seq_len, hidden_dim)
-
-        # Optional output projection
-        out = self.output_proj(decoded)
-        return out
+        return decoded
     
 class TabularBERT(nn.Module):
     """A BERT-style model for masked attribute inference on tabular data:
@@ -88,8 +80,8 @@ class TabularBERT(nn.Module):
             config=EmbeddingLayerConfig(num_embeddings=self.seq_len, embedding_dim=self.hidden_dim)
         )
 
-        self.emb_norm = get_normalization(
-            NormalizationConfig(norm_type="layernorm", num_features=self.hidden_dim)
+        self.emb_norm = NormalizationLayer(
+            NormalizationLayerConfig(norm_type="layernorm", num_features=self.hidden_dim)
         )
         self.dropout = nn.Dropout(config.dropout)
 

@@ -54,3 +54,5 @@ logs/
 outputs/
 checkpoints/
 experiments/
+
+.env

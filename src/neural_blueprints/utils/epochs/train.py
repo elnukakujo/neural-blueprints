@@ -5,6 +5,9 @@ from typing import Callable
 
 from ..device import get_device
 
+import logging
+logger = logging.getLogger(__name__)
+
 def get_train_epoch(training_type: str) -> Callable:
     if training_type in ['nt_xent_loss']:
         return train_epoch_contrastive
@@ -61,8 +64,8 @@ def train_epoch_base(
 ) -> float:
     model.train()
     total_loss = 0.0
-    for X_batch, y_batch in train_loader:
-        X_batch, y_batch = X_batch.to(get_device()), y_batch.to(get_device())
+    for batch in train_loader:
+        X_batch, y_batch = batch[0].to(get_device()), batch[1].to(get_device())
         optimizer.zero_grad()
         y_pred = model(X_batch)
         loss = criterion(y_pred = y_pred, y_true = y_batch)

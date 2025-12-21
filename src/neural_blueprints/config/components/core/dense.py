@@ -7,12 +7,15 @@ class DenseLayerConfig(BaseModel):
     Args:
         input_dim (int): Dimension of the input features.
         output_dim (int): Dimension of the output features.
+        normalization (str | None): Configuration for normalization layer. If None, no normalization is applied.
         activation (str | None): Activation function to use. Options: 'relu', 'tanh', 'sigmoid'. If None, no activation is applied.
+        dropout_p (float | None): Dropout probability. If None, no dropout is applied.
     """
     input_dim: int
     output_dim: int
     normalization: Optional[str] = None
     activation: Optional[str] = None
+    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):

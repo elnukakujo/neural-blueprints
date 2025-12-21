@@ -175,14 +175,11 @@ bert_config = TabularBERTConfig(
         num_layers=4,
         num_heads=4,
         dropout=0.1,
-        projection=None,
-        final_normalization=NormalizationConfig(norm_type="layernorm", num_features=32),
         final_activation=None
     ),
     with_input_projection=True,
     with_output_projection=True,
     dropout=0.1,
-    final_normalization=None,
     final_activation=None
 )
 

@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-from ...config import DenseLayerConfig, NormalizationConfig
-from ...utils import get_activation, get_normalization
+
+from ...config.components.core import DenseLayerConfig, NormalizationLayerConfig, DropoutLayerConfig
+from ...utils import get_activation
 
 class DenseLayer(nn.Module):
     """A fully connected dense layer with optional activation.
@@ -11,13 +12,27 @@ class DenseLayer(nn.Module):
     """
     def __init__(self, config: DenseLayerConfig):
         super(DenseLayer, self).__init__()
-        self.linear = nn.Linear(config.input_dim, config.output_dim)
-        norm_config = NormalizationConfig(
-            norm_type=config.normalization,
-            num_features=config.output_dim
+        from ..core import NormalizationLayer, DropoutLayer
+        
+        linear_layer = nn.Linear(config.input_dim, config.output_dim)
+        normalization_layer = NormalizationLayer(
+            config=NormalizationLayerConfig(
+                norm_type=config.normalization,
+                num_features=config.output_dim
+            )
         )
-        self.normalization = get_normalization(norm_config)
-        self.activation = get_activation(config.activation)
+        activation_layer = get_activation(config.activation)
+        dropout_layer = DropoutLayer(
+            config=DropoutLayerConfig(
+                p=config.dropout_p
+            )
+        )
+        self.layer = nn.Sequential(
+            linear_layer,
+            normalization_layer,
+            activation_layer,
+            dropout_layer
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the dense layer.
@@ -28,7 +43,4 @@ class DenseLayer(nn.Module):
         Returns:
             Output tensor of shape (batch_size, output_dim).
         """
-        x = self.linear(x.float())
-        x = self.normalization(x)
-        x = self.activation(x)
-        return x
+        return self.layer(x)

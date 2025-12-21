@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from ..components.composite import Generator, Discriminator
-from ..config import GANConfig
+from ..config.architectures import GANConfig
 
 class GAN(nn.Module):
     """A simple Generative Adversarial Network (GAN) architecture.

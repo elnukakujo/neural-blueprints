@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from ...config import ResidualLayerConfig
+from ...config.components.core import ResidualLayerConfig
 from ...utils import get_block
 
 class ResidualLayer(nn.Module):

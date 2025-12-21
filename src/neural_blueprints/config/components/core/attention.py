@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, model_validator
 
 class AttentionLayerConfig(BaseModel):
@@ -9,6 +10,9 @@ class AttentionLayerConfig(BaseModel):
     """
     input_dim: int
     num_heads: int
+    normalization: Optional[str] = None
+    activation: Optional[str] = None
+    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):

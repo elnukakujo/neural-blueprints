@@ -1,10 +1,8 @@
 import torch
 import torch.nn as nn
 
-from neural_blueprints.components.core.projection import ProjectionLayer
-
-from ...config import DecoderConfig, TransformerDecoderConfig
-from ...utils import get_block, get_activation, get_normalization
+from ...config.components.composite import DecoderConfig, TransformerDecoderConfig
+from ...utils import get_block, get_activation
 
 class Decoder(nn.Module):
     """A modular decoder that builds a sequence of layers based on the provided configuration.
@@ -15,19 +13,14 @@ class Decoder(nn.Module):
     def __init__(self, config: DecoderConfig):
         super(Decoder, self).__init__()
 
-        self.layer_types = config.layer_types
         self.layer_configs = config.layer_configs
-        self.projection = config.projection
         self.final_activation = config.final_activation
 
         # Build the main generator body using the same modular layer system as Decoder
         layers = nn.ModuleList()
 
-        if self.projection is not None:
-            layers.append(ProjectionLayer(self.projection))
-
-        for layer_type, layer_config in zip(self.layer_types, self.layer_configs):
-            layers.append(get_block(layer_type, layer_config))
+        for layer_config in self.layer_configs:
+            layers.append(get_block(layer_config))
 
         layers.append(get_activation(self.final_activation))
 
@@ -56,8 +49,7 @@ class TransformerDecoder(nn.Module):
         self.hidden_dim = config.hidden_dim
         self.num_layers = config.num_layers
         self.num_heads = config.num_heads
-        self.dropout = config.dropout
-        self.final_normalization = config.final_normalization
+        self.dropout = config.dropout_p
         self.final_activation = config.final_activation
 
         # Optional input projection
@@ -78,8 +70,6 @@ class TransformerDecoder(nn.Module):
             )
             for _ in range(self.num_layers)
         ])
-
-        self.final_norm = get_normalization(self.final_normalization)
 
         # Optional normalization + activation
         self.final_act = get_activation(self.final_activation)
@@ -105,6 +95,5 @@ class TransformerDecoder(nn.Module):
 
         # Back to (batch_size, seq_len, hidden_dim)
         x = x.transpose(0, 1)
-        x = self.final_norm(x)
         x = self.final_act(x)
         return x

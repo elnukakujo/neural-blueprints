@@ -2,20 +2,18 @@ import torch
 import torch.nn as nn
 from pydantic import BaseModel
 
-def get_block(block_type: str, block_config: BaseModel) -> nn.Module:
+from .layer_type import infer_layer_type
+
+def get_block(block_config: BaseModel) -> nn.Module:
     """Factory function to create neural network blocks based on the block type.
     
     Args:
-        block_type (str): Type of the block to create. Supported types: 'dense', 'conv1d', 'conv2d', 'attention'.
         block_config (BaseModel): Configuration object for the block.
         
     Returns:
         nn.Module: An instance of the specified block type.
-        
-    Raises:
-        ValueError: If the block_type is unsupported.
     """
-    block_type = block_type.lower()
+    block_type = infer_layer_type(block_config)
     if block_type == 'dense':
         from ..components.core import DenseLayer
         return DenseLayer(block_config)
@@ -25,12 +23,18 @@ def get_block(block_type: str, block_config: BaseModel) -> nn.Module:
     elif block_type == 'conv2d':
         from ..components.core import Conv2dLayer
         return Conv2dLayer(block_config)
+    elif block_type == 'conv3d':
+        from ..components.core import Conv3dLayer
+        return Conv3dLayer(block_config)
     elif block_type == 'conv1d_transpose':
         from ..components.core import Conv1dTransposeLayer
         return Conv1dTransposeLayer(block_config)
     elif block_type == 'conv2d_transpose':
         from ..components.core import Conv2dTransposeLayer
         return Conv2dTransposeLayer(block_config)
+    elif block_type == 'conv3d_transpose':
+        from ..components.core import Conv3dTransposeLayer
+        return Conv3dTransposeLayer(block_config)
     elif block_type == 'attention':
         from ..components.core import AttentionLayer
         return AttentionLayer(block_config)
@@ -68,9 +72,13 @@ def get_block(block_type: str, block_config: BaseModel) -> nn.Module:
         from ..components.composite import Discriminator
         return Discriminator(block_config)
     elif block_type == 'flatten':
-        return nn.Flatten()
+        from ..components.core import FlattenLayer
+        return FlattenLayer(block_config)
     elif block_type == 'reshape':
         from ..components.core import ReshapeLayer
         return ReshapeLayer(block_config)
+    elif block_type == 'norm':
+        from ..components.core import NormalizationLayer
+        return NormalizationLayer(block_config)
     else:
         raise ValueError(f"Unsupported block type: {block_type}")

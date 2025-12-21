@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from ..components.composite import Encoder, Decoder
-from ..config import AutoEncoderConfig, EncoderConfig, DecoderConfig
+from ..config.architectures import AutoEncoderConfig
 
 class AutoEncoder(nn.Module):
     """A simple AutoEncoder architecture composed of an encoder and a decoder.
@@ -15,17 +15,11 @@ class AutoEncoder(nn.Module):
         self.config = config
 
         self.encoder = Encoder(
-            config = EncoderConfig(
-                layer_types=config.encoder_layer_types,
-                layer_configs=config.encoder_layer_configs,
-            )
+            config=config.encoder_config
         )
 
         self.decoder = Decoder(
-            config = DecoderConfig(
-                layer_types=config.decoder_layer_types,
-                layer_configs=config.decoder_layer_configs
-            )
+            config=config.decoder_config
         )
         
     def blueprint(self) -> AutoEncoderConfig:
@@ -76,6 +70,16 @@ class VariationalAutoEncoder(AutoEncoder):
     def __init__(self, config: AutoEncoderConfig):
         super(VariationalAutoEncoder, self).__init__(config)
 
+        self.logvar_layer = nn.Linear(
+            in_features=self.encoder.layer_configs[-1].output_dim,
+            out_features=self.encoder.layer_configs[-1].output_dim//2
+        )
+
+        self.mu_layer = nn.Linear(
+            in_features=self.encoder.layer_configs[-1].output_dim,
+            out_features=self.encoder.layer_configs[-1].output_dim//2
+        )
+
     def reparameterize(self, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
         """Reparameterization trick to sample from N(mu, var) from N(0,1).
 
@@ -101,8 +105,9 @@ class VariationalAutoEncoder(AutoEncoder):
             mu (torch.Tensor): Mean tensor from the encoder.
             logvar (torch.Tensor): Log-variance tensor from the encoder.
         """
-        mu_logvar = self.encoder(x)
-        mu, logvar = torch.chunk(mu_logvar, 2, dim=-1)
+        z = self.encoder(x)
+        mu = self.mu_layer(z)
+        logvar = self.logvar_layer(z)
         z = self.reparameterize(mu, logvar)
         decoded = self.decoder(z)
         return decoded, mu, logvar

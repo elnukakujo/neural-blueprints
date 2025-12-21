@@ -1,9 +1,10 @@
-from neural_blueprints.utils.normalization import get_normalization
 import torch
 import torch.nn as nn
 
-from ..core import ProjectionLayer
-from ...config import EncoderConfig, TransformerEncoderConfig
+from ..core import NormalizationLayer, DropoutLayer
+
+from ...config.components.composite import EncoderConfig, TransformerEncoderConfig
+from ...config.components.core import NormalizationLayerConfig, DropoutLayerConfig
 from ...utils import get_block, get_activation
 
 class Encoder(nn.Module):
@@ -15,20 +16,21 @@ class Encoder(nn.Module):
     def __init__(self, config: EncoderConfig):
         super(Encoder, self).__init__()
 
-        self.layer_types = config.layer_types
         self.layer_configs = config.layer_configs
-        self.projection = config.projection
+        self.final_activation = config.final_activation
+        self.normalization = config.normalization
+        self.activation = config.activation
+        self.dropout_p = config.dropout_p
         self.final_activation = config.final_activation
 
         # Build the main generator body using the same modular layer system as Decoder
         layers = nn.ModuleList()
 
-        # Optional linear projection from latent space to the first hidden dimension
-        if self.projection is not None:
-            layers.append(ProjectionLayer(self.projection))
-
-        for layer_type, layer_config in zip(self.layer_types, self.layer_configs):
-            layers.append(get_block(layer_type, layer_config))
+        for layer_config in self.layer_configs:
+            layer_config.normalization = self.normalization
+            layer_config.activation = self.activation
+            layer_config.dropout_p = self.dropout_p
+            layers.append(get_block(layer_config))
 
         layers.append(get_activation(self.final_activation))
 
@@ -63,31 +65,32 @@ class TransformerEncoder(nn.Module):
         self.hidden_dim = config.hidden_dim
         self.num_layers = config.num_layers
         self.num_heads = config.num_heads
-        self.dropout = config.dropout
-
-        # Optional input projection (input_dim → hidden_dim)
-        self.input_proj = (
-            ProjectionLayer(config.projection)
-            if config.projection is not None
-            else nn.Identity()
-        )
+        self.normalization = config.normalization
+        self.activation = config.activation
+        self.dropout_p = config.dropout_p
+        self.final_activation = config.final_activation
 
         # Transformer Encoder stack (self-attention only)
-        self.layers = nn.ModuleList([
-            nn.TransformerEncoderLayer(
-                d_model=self.hidden_dim,
-                nhead=self.num_heads,
-                dim_feedforward=self.hidden_dim * 4,
-                dropout=self.dropout,
-                batch_first=True,
-                activation="relu"
-            )
-            for _ in range(self.num_layers)
-        ])
+        self.layers = nn.ModuleList([])
+        for _ in range(self.num_layers):
+            layer = nn.Sequential(
+                nn.TransformerEncoderLayer(
+                    d_model=self.hidden_dim,
+                    nhead=self.num_heads,
+                    dim_feedforward=self.hidden_dim * 4,
+                    dropout=self.dropout_p,
+                    batch_first=True,
+                    activation=self.activation
+                ),
+                NormalizationLayer(
+                    config=NormalizationLayerConfig(
+                        norm_type=self.normalization,
+                        num_features=self.hidden_dim
+                    )
+                )
+            )          
 
-        # Optional final normalizing block
-        self.final_norm = get_normalization(config.final_normalization)
-        self.final_act = get_activation(config.final_activation)
+        self.final_act = get_activation(self.final_activation)
 
     def forward(self, x: torch.Tensor, attn_mask: torch.Tensor = None) -> torch.Tensor:
         """Forward pass through the Transformer encoder.
@@ -99,14 +102,11 @@ class TransformerEncoder(nn.Module):
         Returns:
             Output tensor of shape (batch_size, seq_len, hidden_dim).
         """
-        # Optionally project to hidden dimension
-        x = self.input_proj(x)
 
         # Pass through all encoder layers
         for layer in self.layers:
             x = layer(x, src_key_padding_mask=attn_mask)
 
-        # Optional normalization + activation
-        x = self.final_norm(x)
+        # Optional activation
         x = self.final_act(x)
         return x

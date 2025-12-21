@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from ...config.components.core import NormalizationConfig
+from ...config.components.core import NormalizationLayerConfig
 
 class NormalizationLayer(nn.Module):
     """A layer that applies normalization to its input tensor.
@@ -9,10 +9,11 @@ class NormalizationLayer(nn.Module):
     Args:
         config (NormalizationConfig): Configuration for the normalization layer.
     """
-    def __init__(self, config: NormalizationConfig):
+    def __init__(self, config: NormalizationLayerConfig):
         super(NormalizationLayer, self).__init__()
         if config is None or config.norm_type is None:
             self.network = nn.Identity()
+            return
 
         norm_type = config.norm_type.lower()
         if "batchnorm" in norm_type:

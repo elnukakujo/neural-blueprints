@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, model_validator
 
 class PoolingLayerConfig(BaseModel):
@@ -7,10 +8,16 @@ class PoolingLayerConfig(BaseModel):
         pool_type (str): Type of pooling. Options: 'max', 'avg'.
         kernel_size (int): Size of the pooling kernel.
         stride (int): Stride of the pooling operation.
+        normalization (str | None): Configuration for normalization layer. If None, no normalization is applied.
+        activation (str | None): Activation function to use. If None, no activation is applied.
+        dropout_p (float | None): Dropout probability. If None, no dropout is applied.
     """
     pool_type: str
     kernel_size: int
     stride: int
+    normalization: Optional[str] = None
+    activation: Optional[str] = None
+    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):

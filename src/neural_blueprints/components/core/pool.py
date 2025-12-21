@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from ...config import PoolingLayerConfig
+from ...config.components.core import PoolingLayerConfig
 
 class Pooling2dLayer(nn.Module):
     """A 2D pooling layer that supports different pooling types.

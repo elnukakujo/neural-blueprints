@@ -61,8 +61,8 @@ def eval_epoch_base(
 ) -> float:
     model.eval()
     total_loss = 0.0
-    for X_batch, y_batch in eval_loader:
-        X_batch, y_batch = X_batch.to(get_device()), y_batch.to(get_device())
+    for batch in eval_loader:
+        X_batch, y_batch = batch[0].to(get_device()), batch[1].to(get_device())
         optimizer.zero_grad()
         y_pred = model(X_batch)
         loss = criterion(y_pred = y_pred, y_true = y_batch)

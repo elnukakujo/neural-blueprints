@@ -1,6 +1,6 @@
 from pydantic import BaseModel, model_validator
 
-class NormalizationConfig(BaseModel):
+class NormalizationLayerConfig(BaseModel):
     """Configuration for a normalization layer.
     
     Args:
@@ -12,8 +12,9 @@ class NormalizationConfig(BaseModel):
 
     @model_validator(mode='after')
     def _validate(self):
-        if self.norm_type is not None and self.norm_type.lower() not in ('batchnorm1d', 'batchnorm2d', 'layernorm'):
-            raise ValueError(f"Unsupported norm_type: {self.norm_type}. Supported types: 'batchnorm1d', 'batchnorm2d', 'layernorm'")
+        valid_types = ('batchnorm1d', 'batchnorm2d', 'batchnorm3d', 'layernorm', 'instancenorm1d', 'instancenorm2d', 'instancenorm3d')
+        if self.norm_type is not None and self.norm_type.lower() not in valid_types:
+            raise ValueError(f"Unsupported norm_type: {self.norm_type}. Supported types: {', '.join(valid_types)}")
         if self.num_features <= 0:
             raise ValueError("num_features must be a positive integer")
         return self

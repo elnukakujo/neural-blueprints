@@ -29,8 +29,6 @@ def get_criterion(metric_name: str) -> callable:
         return vae_loss
     elif metric_name == 'nt_xent_loss':
         return nt_xent_loss
-    elif metric_name == 'nt_bxent_loss':
-        return nt_bxent_loss
     else:
         raise ValueError(f"Unsupported metric/loss function: {metric_name}")
     
@@ -80,7 +78,7 @@ def cross_entropy(y_pred, y_true) -> float:
     Returns:
         float: Cross Entropy Loss score.
     """
-    return F.cross_entropy(y_pred, y_true)
+    return F.cross_entropy(y_pred[0], y_true.long())
 
 def binary_cross_entropy(y_pred, y_true) -> float:
     """Calculates the Binary Cross Entropy Loss metric.

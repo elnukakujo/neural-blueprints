@@ -19,17 +19,16 @@ class FeedForwardNetwork(nn.Module):
         self.output_dim = config.output_dim
         self.normalization = config.normalization
         self.activation = config.activation
+        self.final_activation = config.final_activation
         
         layers = []
         in_dim = self.input_dim
         
         for hidden_dim in self.hidden_dims:
-            config = DenseLayerConfig(input_dim=in_dim, output_dim=hidden_dim, normalization=self.normalization, activation=self.activation)
-            layers.append(DenseLayer(config))
+            layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=hidden_dim, normalization=self.normalization, activation=self.activation)))
             in_dim = hidden_dim
             
-        config = DenseLayerConfig(input_dim=in_dim, output_dim=self.output_dim, normalization=self.normalization, activation=None)
-        layers.append(DenseLayer(config))
+        layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=self.output_dim, normalization=None, activation=self.final_activation)))
         
         self.network = nn.Sequential(*layers)
         

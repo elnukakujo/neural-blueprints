@@ -10,6 +10,8 @@ class FeedForwardNetworkConfig(BaseModel):
        output_dim (int): Size of the output features.
        normalization (Optional[str]): Normalization type to use in dense layers.
        activation (Optional[str]): Activation function to use in dense layers.
+       dropout_p (Optional[float]): Dropout probability to use in dense layers.
+       final_activation (Optional[str]): Activation function for the final layer.
     """
 
     input_dim: int
@@ -17,6 +19,8 @@ class FeedForwardNetworkConfig(BaseModel):
     output_dim: int
     normalization: Optional[str] = None
     activation: Optional[str] = None
+    dropout_p: Optional[float] = None
+    final_activation: Optional[str] = None
 
     @model_validator(mode='after')
     def _validate(self):

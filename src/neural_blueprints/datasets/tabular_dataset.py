@@ -106,9 +106,14 @@ class MaskedTabularDataset(TabularDataset):
         # Apply masking using torch.where
         # Where mask is True: use nan_token, otherwise keep original value
         self.masked_data = torch.where(self.mask, nan_tokens_expanded, self.masked_data)
-        
+
         # For labels: where mask is False (not masked), use nan_token
         self.labels = torch.where(~self.mask, nan_tokens_expanded, self.labels)
+        
+        # If mask_column is specified, keep only the masked column in labels
+        if mask_column is not None:
+            labels_col = self.labels[:, self.col_idx:self.col_idx+1]
+            self.labels = labels_col.squeeze(-1) # Shape (n_samples,)
     
     def __getitem__(self, idx):
         row = self.masked_data[idx]

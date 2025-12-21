@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, model_validator
 
 class RecurrentUnitConfig(BaseModel):
@@ -9,12 +10,18 @@ class RecurrentUnitConfig(BaseModel):
         hidden_size (int): Number of features in the hidden state.
         num_layers (int): Number of recurrent layers.
         bidirectional (bool): If True, becomes a bidirectional RNN.
+        normalization (str | None): Configuration for normalization layer. If None, no normalization is applied.
+        activation (str | None): Activation function to use. If None, no activation is applied.
+        dropout_p (float | None): Dropout probability. If None, no dropout is applied.
     """
     input_dim: int
     hidden_dim: int
     num_layers: int = 1
     rnn_type: str = 'RNN'
     bidirectional: bool = False
+    normalization: Optional[str] = None
+    activation: Optional[str] = None
+    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):

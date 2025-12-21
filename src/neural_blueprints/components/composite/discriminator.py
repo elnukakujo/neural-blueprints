@@ -1,5 +1,5 @@
 from .encoder import Encoder
-from ...config import DiscriminatorConfig
+from ...config.components.composite import DiscriminatorConfig
 
 class Discriminator(Encoder):
     """Discriminator model specialized from Encoder for GAN architectures.

@@ -8,10 +8,16 @@ class EmbeddingLayerConfig(BaseModel):
         num_embeddings (int): Size of the vocabulary.
         embedding_dim (int): Dimension of the embeddings.
         padding_idx (int | None): If specified, the entries at padding_idx do not contribute to the gradient; therefore, the embedding vector at padding_idx is not updated during training.
+        normalization (str | None): Normalization method to apply after embedding.
+        activation (str | None): Activation function to apply after embedding.
+        dropout_p (float | None): Dropout probability. If None, no dropout is applied.
     """
     num_embeddings: int
     embedding_dim: int
-    padding_idx: Optional[int] = None
+    padding_idx: Optional[int] = 0
+    normalization: Optional[str] = None
+    activation: Optional[str] = None
+    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):
@@ -30,10 +36,16 @@ class PatchEmbeddingLayerConfig(BaseModel):
         embedding_dim (int): Dimension of the embeddings.
         patch_size (int): Size of each patch.
         in_channels (int): Number of input channels.
+        normalization (str | None): Normalization method to apply after embedding.
+        activation (str | None): Activation function to apply after embedding.
+        dropout_p (float | None): Dropout probability. If None, no dropout is applied.
     """
     embedding_dim: int
     patch_size: int
     in_channels: int = 3
+    normalization: Optional[str] = None
+    activation: Optional[str] = None
+    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):

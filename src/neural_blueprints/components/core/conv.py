@@ -2,15 +2,13 @@ import torch
 import torch.nn as nn
 from abc import abstractmethod
 
-from ...config import ConvLayerConfig
+from ...config.components.core import ConvLayerConfig, DropoutLayerConfig
 from ...utils import get_activation
-
 
 @abstractmethod
 class BaseConvLayer(nn.Module):
     def __init__(self, config: ConvLayerConfig):
-        super(BaseConvLayer, self).__init__()
-        
+        super(BaseConvLayer, self).__init__()        
         self.in_channels = config.in_channels
         self.out_channels = config.out_channels
         self.kernel_size = config.kernel_size
@@ -20,8 +18,57 @@ class BaseConvLayer(nn.Module):
         self.dilation = config.dilation
         self.groups = config.groups
         self.bias = config.bias
-        self.batch_norm = config.batch_norm
         self.activation = config.activation
+        self.dropout_p = config.dropout_p
+
+class Conv3dLayer(BaseConvLayer):
+    """A 3D convolutional layer with optional batchnorm and activation.
+    
+    Args:
+        config (ConvLayerConfig): Configuration for the convolutional layer.
+    """
+    def __init__(
+        self,
+        config: ConvLayerConfig
+    ):
+        super().__init__(config)
+        from ..core import DropoutLayer
+
+        if self.padding is None:
+            self.padding = (self.kernel_size - 1) // 2
+
+        layers = [
+            nn.Conv3d(
+                self.in_channels,
+                self.out_channels,
+                self.kernel_size,
+                stride=self.stride,
+                padding=self.padding,
+                dilation=self.dilation,
+                groups=self.groups,
+                bias=self.bias,
+            )
+        ]
+
+        layers.append(get_activation(self.activation))
+        layers.append(DropoutLayer(
+            config=DropoutLayerConfig(
+                p=self.dropout_p
+            )
+        ))
+
+        self.layer = nn.Sequential(*layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the 2D convolutional layer.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, in_channels, height, width).
+
+        Returns:
+            Output tensor of shape (batch_size, out_channels, height, width).
+        """
+        return self.layer(x)
 
 class Conv2dLayer(BaseConvLayer):
     """A 2D convolutional layer with optional batchnorm and activation.
@@ -34,6 +81,7 @@ class Conv2dLayer(BaseConvLayer):
         config: ConvLayerConfig
     ):
         super().__init__(config)
+        from ..core import DropoutLayer
         if self.padding is None:
             self.padding = (self.kernel_size - 1) // 2
 
@@ -50,11 +98,14 @@ class Conv2dLayer(BaseConvLayer):
             )
         ]
 
-        layers.append(nn.BatchNorm2d(self.out_channels)) if self.batch_norm else None
         layers.append(get_activation(self.activation))
-        
+        layers.append(DropoutLayer(
+            config=DropoutLayerConfig(
+                p=self.dropout_p
+            )
+        ))
 
-        self.conv = nn.Sequential(*layers)
+        self.layer = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the 2D convolutional layer.
@@ -65,7 +116,7 @@ class Conv2dLayer(BaseConvLayer):
         Returns:
             Output tensor of shape (batch_size, out_channels, height, width).
         """
-        return self.conv(x)
+        return self.layer(x)
     
 
 class Conv1dLayer(BaseConvLayer):
@@ -79,6 +130,7 @@ class Conv1dLayer(BaseConvLayer):
         config: ConvLayerConfig
     ):
         super().__init__(config)
+        from ..core import DropoutLayer
         if self.padding is None:
             self.padding = (self.kernel_size - 1) // 2
 
@@ -95,10 +147,14 @@ class Conv1dLayer(BaseConvLayer):
             )
         ]
 
-        layers.append(nn.BatchNorm1d(self.out_channels)) if self.batch_norm else None
         layers.append(get_activation(self.activation))
+        layers.append(DropoutLayer(
+            config=DropoutLayerConfig(
+                p=self.dropout_p
+            )
+        ))
         
-        self.conv = nn.Sequential(*layers)
+        self.layer = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the 1D convolutional layer.
@@ -109,7 +165,57 @@ class Conv1dLayer(BaseConvLayer):
         Returns:
             Output tensor of shape (batch_size, out_channels, length).
         """
-        return self.conv(x)
+        return self.layer(x)
+    
+class Conv3dTransposeLayer(BaseConvLayer):
+    """A 3D transposed convolutional layer with optional batchnorm and activation.
+    
+    Args:
+        config (ConvLayerConfig): Configuration for the convolutional layer.
+    """
+    def __init__(
+        self,
+        config: ConvLayerConfig
+    ):
+        super().__init__(config)
+        from ..core import DropoutLayer
+
+        if self.padding is None:
+            self.padding = (self.kernel_size - 1) // 2
+
+        layers = [
+            nn.ConvTranspose3d(
+                self.in_channels,
+                self.out_channels,
+                self.kernel_size,
+                stride=self.stride,
+                padding=self.padding,
+                output_padding=self.output_padding,
+                dilation=self.dilation,
+                groups=self.groups,
+                bias=self.bias,
+            )
+        ]
+
+        layers.append(get_activation(self.activation))
+        layers.append(DropoutLayer(
+            config=DropoutLayerConfig(
+                p=self.dropout_p
+            )
+        ))
+
+        self.layer = nn.Sequential(*layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the 3D transposed convolutional layer.
+        
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, in_channels, depth, height, width).
+            
+        Returns:
+            Output tensor of shape (batch_size, out_channels, depth, height, width).
+        """
+        return self.layer(x)
     
 class Conv2dTransposeLayer(BaseConvLayer):
     """A 2D transposed convolutional layer with optional batchnorm and activation.
@@ -122,6 +228,7 @@ class Conv2dTransposeLayer(BaseConvLayer):
         config: ConvLayerConfig
     ):
         super().__init__(config)
+        from ..core import DropoutLayer
         if self.padding is None:
             self.padding = (self.kernel_size - 1) // 2
 
@@ -139,11 +246,14 @@ class Conv2dTransposeLayer(BaseConvLayer):
             )
         ]
 
-        layers.append(nn.BatchNorm2d(self.out_channels)) if self.batch_norm else None
         layers.append(get_activation(self.activation))
-        
+        layers.append(DropoutLayer(
+            config=DropoutLayerConfig(
+                p=self.dropout_p
+            )
+        ))
 
-        self.conv = nn.Sequential(*layers)
+        self.layer = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the 2D transposed convolutional layer.
@@ -154,7 +264,7 @@ class Conv2dTransposeLayer(BaseConvLayer):
         Returns:
             Output tensor of shape (batch_size, out_channels, height, width).
         """
-        return self.conv(x)
+        return self.layer(x)
     
 
 class Conv1dTransposeLayer(BaseConvLayer):
@@ -168,6 +278,7 @@ class Conv1dTransposeLayer(BaseConvLayer):
         config: ConvLayerConfig
     ):
         super().__init__(config)
+        from ..core import DropoutLayer
         if self.padding is None:
             self.padding = (self.kernel_size - 1) // 2
 
@@ -185,10 +296,14 @@ class Conv1dTransposeLayer(BaseConvLayer):
             )
         ]
 
-        layers.append(nn.BatchNorm1d(self.out_channels)) if self.batch_norm else None
         layers.append(get_activation(self.activation))
+        layers.append(DropoutLayer(
+            config=DropoutLayerConfig(
+                p=self.dropout_p
+            )
+        ))
         
-        self.conv = nn.Sequential(*layers)
+        self.layer = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the 1D transposed convolutional layer.
@@ -199,4 +314,4 @@ class Conv1dTransposeLayer(BaseConvLayer):
         Returns:
             Output tensor of shape (batch_size, out_channels, length).
         """
-        return self.conv(x)
+        return self.layer(x)

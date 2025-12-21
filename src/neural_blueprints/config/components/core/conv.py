@@ -13,8 +13,9 @@ class ConvLayerConfig(BaseModel):
         dilation (int): Spacing between kernel elements.
         groups (int): Number of blocked connections from input channels to output channels.
         bias (bool): If True, adds a learnable bias to the output.
-        batch_norm (bool): If True, applies batch normalization after the convolution.
-        activation (str | None): Activation function to use. Options: 'relu', 'leakyrelu', 'elu', 'silu', 'gelu', 'sigmoid', 'tanh'. If None, no activation is applied.
+        activation (Optional[str]): Activation function to use. Options: 'relu', 'leakyrelu', 'elu', 'silu', 'gelu', 'sigmoid', 'tanh'. If None, no activation is applied.
+        dropout_p (Optional[float]): Dropout probability. If None, no dropout is applied.
+        dim (int): Dimensionality of the convolution (1D, 2D, or 3D).
     """
     in_channels: int
     out_channels: int
@@ -25,8 +26,9 @@ class ConvLayerConfig(BaseModel):
     dilation: int = 1
     groups: int = 1
     bias: bool = True
-    batch_norm: bool = False
-    activation: Optional[str] = "relu"
+    dim: int = 1 # 1 for Conv1D, 2 for Conv2D, 3 for Conv3D
+    activation: Optional[str] = None
+    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):
@@ -48,4 +50,6 @@ class ConvLayerConfig(BaseModel):
             raise ValueError("groups must be a positive integer")
         if self.activation is not None and self.activation.lower() not in ('relu', 'leakyrelu', 'elu', 'silu', 'gelu', 'sigmoid', 'tanh'):
             raise ValueError(f"Unsupported activation: {self.activation}. Supported: {'relu', 'leakyrelu', 'elu', 'silu', 'gelu', 'sigmoid', 'tanh'}")
+        if self.dim not in (1, 2, 3):
+            raise ValueError("dim must be 1, 2, or 3")
         return self
