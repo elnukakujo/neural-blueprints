@@ -4,6 +4,9 @@ import torch.nn as nn
 from ...config.components.core import DenseLayerConfig, NormalizationLayerConfig, DropoutLayerConfig
 from ...utils import get_activation
 
+import logging
+logger = logging.getLogger(__name__)
+
 class DenseLayer(nn.Module):
     """A fully connected dense layer with optional activation.
     
@@ -43,4 +46,9 @@ class DenseLayer(nn.Module):
         Returns:
             Output tensor of shape (batch_size, output_dim).
         """
-        return self.layer(x)
+        try:
+            return self.layer(x)
+        except Exception as e:
+            logger.debug(f"Input tensor shape: {x.shape}")
+            logger.debug(f"Dense layer configuration: {self.layer}")
+            raise RuntimeError(f"Error in DenseLayer forward pass: {e}")

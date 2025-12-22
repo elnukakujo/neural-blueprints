@@ -39,8 +39,8 @@ class MLPConfig(BaseModel):
             raise ValueError("output_dim must be a positive integer")
         if any(h <= 0 for h in self.hidden_dims):
             raise ValueError("All hidden_dims must be positive integers")
-        if self.activation is not None and self.activation.lower() not in ('relu', 'tanh', 'sigmoid', 'gelu'):
-            raise ValueError(f"Unsupported activation: {self.activation}. Supported: {'relu', 'tanh', 'sigmoid', 'gelu'}")
-        if self.final_activation is not None and self.final_activation.lower() not in ('relu', 'tanh', 'sigmoid', 'gelu'):
-            raise ValueError(f"Unsupported final_activation: {self.final_activation}. Supported: {'relu', 'tanh', 'sigmoid', 'gelu'}")
+        if self.activation is not None and self.activation.lower() not in ('relu', 'tanh', 'sigmoid', 'gelu', 'softmax'):
+            raise ValueError(f"Unsupported activation: {self.activation}. Supported: {'relu', 'tanh', 'sigmoid', 'gelu', 'softmax'}")
+        if self.final_activation is not None and self.final_activation.lower() not in ('relu', 'tanh', 'sigmoid', 'gelu', 'softmax'):
+            raise ValueError(f"Unsupported final_activation: {self.final_activation}. Supported: {'relu', 'tanh', 'sigmoid', 'gelu', 'softmax'}")
         return self

@@ -78,7 +78,7 @@ def cross_entropy(y_pred, y_true) -> float:
     Returns:
         float: Cross Entropy Loss score.
     """
-    return F.cross_entropy(y_pred[0], y_true.long())
+    return F.cross_entropy(y_pred, y_true.long())
 
 def binary_cross_entropy(y_pred, y_true) -> float:
     """Calculates the Binary Cross Entropy Loss metric.
@@ -109,7 +109,7 @@ def mixed_type_reconstruction_loss(y_pred: list[torch.Tensor] | torch.Tensor, y_
         for col_idx in range(len(y_pred)):
             pred = y_pred[col_idx]
             label = y_true[:, col_idx]
-            
+
             if pred.size(1) > 1:
                 # Weighted cross-entropy
                 loss = F.cross_entropy(input = pred, target = label.long(), reduction='sum')

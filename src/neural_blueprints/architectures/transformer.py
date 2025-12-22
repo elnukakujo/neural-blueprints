@@ -13,6 +13,9 @@ from ..config.components.composite.projections.input import TabularInputProjecti
 from ..config.components.composite.projections.output import TabularOutputProjectionConfig
 from ..config.components.core import EmbeddingLayerConfig, NormalizationLayerConfig
 
+import logging
+logger = logging.getLogger(__name__)
+
 class Transformer(nn.Module):
     """A simple Transformer architecture with encoder and decoder.
     
@@ -62,7 +65,8 @@ class TabularBERT(nn.Module):
         super().__init__()
         self.config = config
 
-        cardinalities = config.cardinalities
+        input_cardinalities = config.input_cardinalities
+        output_cardinalities = config.output_cardinalities
         latent_dim = config.latent_dim
         encoder_layers = config.encoder_layers
         dropout_p = config.dropout_p
@@ -73,7 +77,7 @@ class TabularBERT(nn.Module):
         # ---- Projections for discrete and continuous features ----
         self.input_projection = TabularInputProjection(
             config=TabularInputProjectionConfig(
-                cardinalities=cardinalities,
+                cardinalities=input_cardinalities,
                 hidden_dims=[latent_dim*4, latent_dim*2],
                 output_dim=latent_dim,
                 dropout_p=dropout_p,
@@ -84,7 +88,7 @@ class TabularBERT(nn.Module):
 
         # Positional embeddings
         self.pos_emb = EmbeddingLayer(
-            config=EmbeddingLayerConfig(num_embeddings=len(cardinalities), embedding_dim=latent_dim)
+            config=EmbeddingLayerConfig(num_embeddings=len(input_cardinalities)+1, embedding_dim=latent_dim)
         )
 
         self.emb_norm = NormalizationLayer(
@@ -107,8 +111,8 @@ class TabularBERT(nn.Module):
         # ---- Heads for masked attribute prediction ----
         self.output_projection = TabularOutputProjection(
             config=TabularOutputProjectionConfig(
-                cardinalities=cardinalities,
-                latent_dim=latent_dim,
+                cardinalities=output_cardinalities,
+                input_dim=latent_dim,
                 hidden_dims=[latent_dim*2, latent_dim*4],
                 dropout_p=dropout_p,
                 normalization=normalization,
@@ -130,12 +134,14 @@ class TabularBERT(nn.Module):
         Returns:
             List of output tensors for each feature or output tensor of shape (batch_size, seq_len, hidden_dim).
         """
+        logger.debug(f"Input shape: {x.shape}, values: {x}")
         B, L = x.shape
         # ---- Split categorical and continuous features ----
         x_embed, nan_mask = self.input_projection(x)  # shape: (B, num_features, hidden_dim), (B, num_features)
 
         # ---- Add positional embeddings ----
         pos = torch.arange(L, device=x.device).unsqueeze(0).expand(B, L) # shape: (batch, seq)
+        logger.debug(f"Positional indices shape: {pos.shape}, values: {pos}")
         x_embed = x_embed + self.pos_emb(pos)
 
         x_embed = self.emb_norm(x_embed)

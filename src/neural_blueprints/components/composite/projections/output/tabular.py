@@ -26,7 +26,7 @@ class TabularOutputProjection(nn.Module):
         ):
         super().__init__()
         cardinalities = config.cardinalities
-        latent_dim = config.latent_dim
+        latent_dim = config.input_dim
         hidden_dims = config.hidden_dims
         activation = config.activation
         normalization = config.normalization

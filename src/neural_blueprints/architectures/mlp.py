@@ -28,7 +28,7 @@ class MLP(nn.Module):
             self.input_projection = None
 
         if config.output_projection is not None:
-            config.output_dim = config.output_projection.latent_dim*len(config.output_projection.cardinalities)
+            config.output_dim = config.output_projection.input_dim*len(config.output_projection.cardinalities)
             self.output_projection = get_output_projection(
                 projection_config=config.output_projection
             )
@@ -43,7 +43,8 @@ class MLP(nn.Module):
 
         self.network = nn.Sequential(
             self.input_projection if config.input_projection is not None else nn.Identity(),
-            self.layers
+            self.layers,
+            self.output_projection if config.output_projection is not None else nn.Identity()
         )
 
     def blueprint(self) -> MLPConfig:
@@ -64,5 +65,6 @@ class MLP(nn.Module):
             x = x.flatten(start_dim=1)
         pred = self.layers(x)
         if self.output_projection is not None:
-            pred = self.output_projection(pred.unsqueeze(1))
+            pred = pred.reshape(pred.size(0), len(self.config.output_projection.cardinalities), self.config.output_projection.input_dim)
+            pred = self.output_projection(pred)
         return pred

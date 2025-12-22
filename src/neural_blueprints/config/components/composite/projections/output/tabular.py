@@ -15,7 +15,7 @@ class TabularOutputProjectionConfig(BaseModel):
         final_activation (Optional[str]): Final activation function to use.
     """
     cardinalities: List[int]
-    latent_dim: int
+    input_dim: int
     hidden_dims: List[int]
     activation: Optional[str] = None
     normalization: Optional[str] = None

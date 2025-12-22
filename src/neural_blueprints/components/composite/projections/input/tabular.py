@@ -36,7 +36,7 @@ class TabularInputProjection(nn.Module):
                     self.input_projections.append(
                         EmbeddingLayer(
                             config=EmbeddingLayerConfig(
-                                num_embeddings=cardinality+1,   # +1 for padding idx
+                                num_embeddings=cardinality+1,    # +1 for padding index
                                 embedding_dim=self.output_dim,
                                 normalization=None,
                                 activation=None
@@ -48,7 +48,7 @@ class TabularInputProjection(nn.Module):
                     layers.append(
                         EmbeddingLayer(
                             config=EmbeddingLayerConfig(
-                                num_embeddings=cardinality+1,   # +1 for padding idx
+                                num_embeddings=cardinality+1,    # +1 for padding index
                                 embedding_dim=self.hidden_dims[0],
                                 normalization=None,
                                 activation=self.activation

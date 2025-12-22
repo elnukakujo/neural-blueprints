@@ -54,6 +54,37 @@ class TabularDataset(Dataset):
     def __getitem__(self, idx):
         row = self.data[idx]
         return row
+    
+class TabularSingleLabelDataset(TabularDataset):
+    """
+    PyTorch Dataset for tabular data with single label classification/regression.
+
+    Args:
+        data (pd.DataFrame): The tabular data.
+        discrete_features (list[str]): List of column names for discrete features.
+        continuous_features (list[str]): List of column names for continuous features.
+        label_column (str): The column name for the classification/regression labels.
+        device (str, optional): Device to load the data onto. Defaults to None, which uses get_device().
+    """
+    def __init__(
+            self,
+            data: pd.DataFrame,
+            discrete_features: list[str],
+            continuous_features: list[str],
+            label_column: str,
+            device: str = None
+        ):
+        super().__init__(data, discrete_features, continuous_features, device=device)
+        self.label_idx = self.columns.index(label_column)
+        self.labels = self.data[:, self.label_idx].long()
+
+        self.cardinalities.pop(self.label_idx)
+        self.data = self.data[:, torch.arange(self.data.shape[1]) != self.label_idx]
+    
+    def __getitem__(self, idx):
+        row = self.data[idx]
+        label = self.labels[idx]
+        return row, label
 
 class MaskedTabularDataset(TabularDataset):
     """
@@ -109,11 +140,6 @@ class MaskedTabularDataset(TabularDataset):
 
         # For labels: where mask is False (not masked), use nan_token
         self.labels = torch.where(~self.mask, nan_tokens_expanded, self.labels)
-        
-        # If mask_column is specified, keep only the masked column in labels
-        if mask_column is not None:
-            labels_col = self.labels[:, self.col_idx:self.col_idx+1]
-            self.labels = labels_col.squeeze(-1) # Shape (n_samples,)
     
     def __getitem__(self, idx):
         row = self.masked_data[idx]

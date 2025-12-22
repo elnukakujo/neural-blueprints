@@ -1,6 +1,7 @@
 """Init file for Dataset modules."""
-from .tabular_dataset import (
+from .tabular import (
     TabularDataset,
+    TabularSingleLabelDataset,
     MaskedTabularDataset,
     FeatureTabularDataset,
     FeatureMaskedTabularDataset,
@@ -8,6 +9,7 @@ from .tabular_dataset import (
 
 __all__ = [
     TabularDataset,
+    TabularSingleLabelDataset,
     MaskedTabularDataset,
     FeatureTabularDataset,
     FeatureMaskedTabularDataset,
