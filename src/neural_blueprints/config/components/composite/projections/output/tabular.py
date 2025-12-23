@@ -12,15 +12,13 @@ class TabularOutputProjectionConfig(BaseModel):
         activation (Optional[str]): Activation function to use.
         normalization (Optional[str]): Normalization method to use.
         dropout_p (Optional[float]): Dropout probability.
-        final_activation (Optional[str]): Final activation function to use.
     """
     cardinalities: List[int]
-    input_dim: int
+    input_dim: List[int]
     hidden_dims: List[int]
     activation: Optional[str] = None
     normalization: Optional[str] = None
     dropout_p: Optional[float] = None
-    final_activation: Optional[str] = None
 
     @model_validator(mode='after')
     def _validate(self):

@@ -14,21 +14,22 @@ class FeedForwardNetwork(nn.Module):
     def __init__(self, config: FeedForwardNetworkConfig):
         super(FeedForwardNetwork, self).__init__()
 
-        self.input_dim = config.input_dim
-        self.hidden_dims = config.hidden_dims
-        self.output_dim = config.output_dim
-        self.normalization = config.normalization
-        self.activation = config.activation
-        self.final_activation = config.final_activation
+        input_dim = config.input_dim
+        hidden_dims = config.hidden_dims
+        output_dim = config.output_dim
+        normalization = config.normalization
+        activation = config.activation
+        dropout_p = config.dropout_p
+        final_activation = config.final_activation
         
         layers = []
-        in_dim = self.input_dim
+        in_dim = input_dim
         
-        for hidden_dim in self.hidden_dims:
-            layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=hidden_dim, normalization=self.normalization, activation=self.activation)))
+        for hidden_dim in hidden_dims:
+            layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=hidden_dim, normalization=normalization, activation=activation, dropout_p=dropout_p)))
             in_dim = hidden_dim
             
-        layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=self.output_dim, normalization=None, activation=self.final_activation)))
+        layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=output_dim, normalization=None, activation=final_activation)))
         
         self.network = nn.Sequential(*layers)
         

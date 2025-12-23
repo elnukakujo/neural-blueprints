@@ -5,7 +5,7 @@ from .recurrent import RecurrentUnit
 from .attention import AttentionLayer
 from .residual import ResidualLayer
 from .embedding import EmbeddingLayer, PatchEmbeddingLayer
-from .pool import Pooling1dLayer, Pooling2dLayer
+from .pool import Pooling1dLayer, Pooling2dLayer, Pooling3dLayer
 from .reshape import ReshapeLayer
 from .norm import NormalizationLayer
 from .flatten import FlattenLayer
@@ -26,6 +26,7 @@ __all__ = [
     PatchEmbeddingLayer,
     Pooling1dLayer,
     Pooling2dLayer,
+    Pooling3dLayer,
     ReshapeLayer,
     NormalizationLayer,
     FlattenLayer,

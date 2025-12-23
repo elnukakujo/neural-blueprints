@@ -23,12 +23,12 @@ class MLP(nn.Module):
                 projection_config=config.input_projection
             )
             logger.info(f"Using input projection: {self.input_projection.__class__.__name__}")
-            config.input_dim = self.input_projection.output_dim*len(self.input_projection.cardinalities)
+            config.input_dim = self.input_projection.output_dim[-1]
         else:
             self.input_projection = None
 
         if config.output_projection is not None:
-            config.output_dim = config.output_projection.input_dim*len(config.output_projection.cardinalities)
+            config.output_dim = config.output_projection.input_dim[-1]
             self.output_projection = get_output_projection(
                 projection_config=config.output_projection
             )
@@ -62,9 +62,7 @@ class MLP(nn.Module):
         """
         if self.input_projection is not None:
             x, _ = self.input_projection(x)
-            x = x.flatten(start_dim=1)
         pred = self.layers(x)
         if self.output_projection is not None:
-            pred = pred.reshape(pred.size(0), len(self.config.output_projection.cardinalities), self.config.output_projection.input_dim)
             pred = self.output_projection(pred)
         return pred

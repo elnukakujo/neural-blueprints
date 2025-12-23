@@ -23,23 +23,25 @@ class TabularInputProjection(nn.Module):
                 ):
         super().__init__()
         self.cardinalities = config.cardinalities
-        self.hidden_dims = config.hidden_dims
+        hidden_dims = config.hidden_dims
         self.output_dim = config.output_dim
-        self.dropout_p = config.dropout_p
-        self.normalization = config.normalization
-        self.activation = config.activation
+        latent_dim = config.output_dim[-1] if len(config.output_dim) > 1 else config.output_dim[-1]/len(config.cardinalities)
+        dropout_p = config.dropout_p
+        normalization = config.normalization
+        activation = config.activation
 
         self.input_projections = nn.ModuleList([])
         for cardinality in self.cardinalities:
             if cardinality>1:   # Discrete Scenario
-                if self.hidden_dims is None:                    # No hidden layers
+                if hidden_dims is None:                    # No hidden layers
                     self.input_projections.append(
                         EmbeddingLayer(
                             config=EmbeddingLayerConfig(
                                 num_embeddings=cardinality+1,    # +1 for padding index
-                                embedding_dim=self.output_dim,
+                                embedding_dim=latent_dim,
                                 normalization=None,
-                                activation=None
+                                activation=None,
+                                dropout_p=dropout_p
                             )
                         )
                     )
@@ -49,28 +51,31 @@ class TabularInputProjection(nn.Module):
                         EmbeddingLayer(
                             config=EmbeddingLayerConfig(
                                 num_embeddings=cardinality+1,    # +1 for padding index
-                                embedding_dim=self.hidden_dims[0],
+                                embedding_dim=hidden_dims[0],
                                 normalization=None,
-                                activation=self.activation
+                                activation=activation,
+                                dropout_p=dropout_p
                             )
                         )
                     )
-                    for layer in range(1, len(self.hidden_dims)):
+                    for layer in range(1, len(hidden_dims)):
                         config = DenseLayerConfig(
-                            input_dim=self.hidden_dims[layer-1],
-                            output_dim=self.hidden_dims[layer],
-                            normalization=self.normalization,
-                            activation=self.activation
+                            input_dim=hidden_dims[layer-1],
+                            output_dim=hidden_dims[layer],
+                            normalization=normalization,
+                            activation=activation,
+                            dropout_p=dropout_p
                         )
                         layers.append(DenseLayer(config))
                     
                     layers.append(
                         DenseLayer(
                             config=DenseLayerConfig(
-                                input_dim=self.hidden_dims[-1],
-                                output_dim=self.output_dim,
+                                input_dim=hidden_dims[-1],
+                                output_dim=latent_dim,
                                 normalization=None,
-                                activation=None
+                                activation=None,
+                                dropout_p=dropout_p
                             )
                         )
                     )
@@ -80,10 +85,11 @@ class TabularInputProjection(nn.Module):
                     FeedForwardNetwork(
                         config=FeedForwardNetworkConfig(
                             input_dim=1,
-                            hidden_dims=self.hidden_dims,
-                            output_dim=self.output_dim,
-                            normalization=self.normalization,
-                            activation=self.activation
+                            hidden_dims=hidden_dims,
+                            output_dim=latent_dim,
+                            normalization=normalization,
+                            activation=activation,
+                            dropout_p=dropout_p
                         )
                     )
                 )
@@ -116,5 +122,7 @@ class TabularInputProjection(nn.Module):
             nan_mask.append(is_masked)                          # shape (batch_size)
         embeddings = torch.stack(embeddings, dim=1)             # shape (batch_size, num_attributes, output_dim)
         nan_mask = torch.stack(nan_mask, dim=1).bool()          # shape (batch_size, num_attributes)
+
+        embeddings = embeddings.view(embeddings.size(0), *self.output_dim)  # shape (batch_size, *output_dim)
                 
-        return embeddings, nan_mask # shape (batch_size, num_attributes, output_dim), (batch_size, num_attributes, 1)
+        return embeddings, nan_mask # shape matches output_dim, (batch_size, num_attributes, 1)
