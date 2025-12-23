@@ -115,7 +115,8 @@ class TabularBERT(nn.Module):
         # ---- Heads for masked attribute prediction ----
         self.output_projection = TabularOutputProjection(
             config=TabularOutputProjectionConfig(
-                cardinalities=output_cardinalities,
+                input_cardinalities=input_cardinalities,
+                output_cardinalities=output_cardinalities,
                 input_dim=[len(input_cardinalities), latent_dim],
                 hidden_dims=[latent_dim*2, latent_dim*4],
                 dropout_p=dropout_p,
