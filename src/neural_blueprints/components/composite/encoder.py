@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 
-from ..core import NormalizationLayer, DropoutLayer
-
 from ...config.components.composite import EncoderConfig, TransformerEncoderConfig
-from ...config.components.core import NormalizationLayerConfig, DropoutLayerConfig
 from ...utils import get_block, get_activation
+
+import logging
+logger = logging.getLogger(__name__)
 
 class Encoder(nn.Module):
     """A modular encoder that builds a sequence of layers based on the provided configuration.
@@ -68,6 +68,7 @@ class TransformerEncoder(nn.Module):
         self.activation = config.activation
         self.dropout_p = config.dropout_p
         self.final_activation = config.final_activation
+
 
         # Transformer Encoder stack (self-attention only)
         self.layers = nn.ModuleList([])

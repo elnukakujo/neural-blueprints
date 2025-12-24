@@ -3,6 +3,10 @@ import torch.nn as nn
 
 from ..components.composite import Encoder, Decoder
 from ..config.architectures import AutoEncoderConfig
+from ..utils import get_activation, get_input_projection, get_output_projection
+
+import logging
+logger = logging.getLogger(__name__)
 
 class AutoEncoder(nn.Module):
     """A simple AutoEncoder architecture composed of an encoder and a decoder.
@@ -13,6 +17,22 @@ class AutoEncoder(nn.Module):
     def __init__(self, config: AutoEncoderConfig):
         super(AutoEncoder, self).__init__()
         self.config = config
+
+        if config.input_projection is not None:
+            self.input_projection = get_input_projection(
+                projection_config=config.input_projection
+            )
+            logger.info(f"Using input projection: {self.input_projection.__class__.__name__}")
+        else:
+            self.input_projection = None
+
+        if config.output_projection is not None:
+            self.output_projection = get_output_projection(
+                projection_config=config.output_projection
+            )
+            logger.info(f"Using output projection: {self.output_projection.__class__.__name__}")
+        else:
+            self.output_projection = None
 
         self.encoder = Encoder(
             config=config.encoder_config
@@ -35,8 +55,14 @@ class AutoEncoder(nn.Module):
         Returns:
             Output tensor after passing through the autoencoder.
         """
+        if self.input_projection is not None:
+            x, _ = self.input_projection(x)
+
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
+
+        if self.output_projection is not None:
+            decoded = self.output_projection(decoded)
         return decoded
     
     def encode(self, x: torch.Tensor) -> torch.Tensor:
@@ -48,6 +74,8 @@ class AutoEncoder(nn.Module):
         Returns:
             Latent representation tensor.
         """
+        if self.input_projection is not None:
+            x, _ = self.input_projection(x)
         return self.encoder(x)
     
     def decode(self, z: torch.Tensor) -> torch.Tensor:
@@ -59,7 +87,12 @@ class AutoEncoder(nn.Module):
         Returns:
             Reconstructed tensor.
         """
-        return self.decoder(z)
+        decoded = self.decoder(z)
+
+        if self.output_projection is not None:
+            decoded = self.output_projection(decoded)
+
+        return decoded
     
 class VariationalAutoEncoder(AutoEncoder):
     """A Variational AutoEncoder (VAE) architecture composed of an encoder and a decoder.
@@ -105,11 +138,16 @@ class VariationalAutoEncoder(AutoEncoder):
             mu (torch.Tensor): Mean tensor from the encoder.
             logvar (torch.Tensor): Log-variance tensor from the encoder.
         """
+        if self.input_projection is not None:
+            x, _ = self.input_projection(x)
+
         z = self.encoder(x)
         mu = self.mu_layer(z)
         logvar = self.logvar_layer(z)
         z = self.reparameterize(mu, logvar)
         decoded = self.decoder(z)
+        if self.output_projection is not None:
+            decoded = self.output_projection(decoded)
         return decoded, mu, logvar
 
     def encode(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -122,6 +160,9 @@ class VariationalAutoEncoder(AutoEncoder):
             mu (torch.Tensor): Mean tensor.
             logvar (torch.Tensor): Log-variance tensor.
         """
+        if self.input_projection is not None:
+            x, _ = self.input_projection(x)
+            
         mu_logvar = self.encoder(x)
         mu, logvar = torch.chunk(mu_logvar, 2, dim=-1)
         return mu, logvar

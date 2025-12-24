@@ -6,7 +6,7 @@ class TabularOutputProjectionConfig(BaseModel):
     Configuration for Tabular Output Projection.
 
     Args:
-        input_cardinalities (List[int]): List of cardinalities for each input categorical attribute.
+        input_cardinalities (Optional[List[int]]): List of cardinalities for each input categorical attribute. If none, defaults to output cardinalities.
         output_cardinalities (Optional[List[int]]): List of cardinalities for each output categorical attribute. If none, defaults to input cardinalities.
         input_dim (List[int]): List of input dimensions.
         hidden_dims (List[int]): List of hidden dimensions for the feedforward networks.
@@ -14,7 +14,7 @@ class TabularOutputProjectionConfig(BaseModel):
         normalization (Optional[str]): Normalization method to use.
         dropout_p (Optional[float]): Dropout probability.
     """
-    input_cardinalities: List[int]
+    input_cardinalities: Optional[List[int]] = None
     output_cardinalities: Optional[List[int]] = None
     input_dim: List[int]
     hidden_dims: List[int]

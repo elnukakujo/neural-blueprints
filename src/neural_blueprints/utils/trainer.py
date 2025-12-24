@@ -10,7 +10,7 @@ from .criterion import get_criterion
 from .optimizer import get_optimizer
 from .device import get_device
 from .visualize import curve_plot
-from .epochs import get_train_epoch, get_eval_epoch
+from .inference import get_train_inference, get_eval_inference, get_predict_inference
 from ..config.utils import TrainerConfig
 
 PACKAGE_DIR = os.path.dirname(__file__)  # points to github_repo/src/neural_blueprints/utils
@@ -27,8 +27,9 @@ class Trainer:
         self.model = model.to(self.device)
 
         self.criterion = get_criterion(config.criterion)
-        self.train_epoch = get_train_epoch(config.criterion)
-        self.eval_epoch = get_eval_epoch(config.criterion)
+        self.train_epoch = get_train_inference(config.criterion)
+        self.eval_epoch = get_eval_inference(config.criterion)
+        self.predict_inference = get_predict_inference(config.criterion)
         self.optimizer = get_optimizer(config.optimizer, model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
         self.early_stopping_patience = config.early_stopping_patience
 
@@ -69,7 +70,6 @@ class Trainer:
             val_losses.append(self.eval_epoch(
                 val_loader,
                 self.model,
-                self.optimizer,
                 self.criterion
             ))
             if self.best_val_loss == float('inf'):
@@ -108,3 +108,17 @@ class Trainer:
         
         if self.save_weights_path:
             torch.save(self.model.state_dict(), self.save_weights_path)
+
+    def predict(self, test_dataset: torch.utils.data.Dataset) -> torch.Tensor:
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
+        self.model.eval()
+
+        start_time = time.time()
+        results = self.predict_inference(
+            model=self.model,
+            test_loader=test_loader
+        )
+
+        end_time = time.time()
+        logger.info(f"Inference completed in {end_time - start_time:.2f} seconds.")
+        return results

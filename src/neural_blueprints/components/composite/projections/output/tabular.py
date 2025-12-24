@@ -35,7 +35,6 @@ class TabularOutputProjection(nn.Module):
             self.cardinalities = output_cardinalities
             self.with_same_cardinalities = False
             self.latent_dim = torch.prod(torch.tensor(input_dim)).item()
-            print(self.latent_dim)
         
 
         # Need to add case if input_cardinalities different from output_cardinalities for multi classification/regression scenarios

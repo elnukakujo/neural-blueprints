@@ -13,25 +13,32 @@ def get_criterion(metric_name: str) -> callable:
         Callable: Corresponding loss function.
     """
     metric_name = metric_name.lower()
-    if metric_name == 'mse':
-        return mse
-    elif metric_name == 'mae':
-        return mae
-    elif metric_name == 'cross_entropy':
-        return cross_entropy
-    elif metric_name == 'binary_cross_entropy':
-        return binary_cross_entropy
-    elif metric_name == 'rmse':
-        return rmse
-    elif metric_name == 'mixed_type_reconstruction_loss':
-        return mixed_type_reconstruction_loss
-    elif metric_name == 'vae_loss':
-        return vae_loss
-    elif metric_name == 'nt_xent_loss':
-        return nt_xent_loss
+    if 'mse' in metric_name:
+        base_loss = mse
+    elif 'mae' in metric_name:
+        base_loss = mae
+    elif 'cross_entropy' in metric_name:
+        base_loss = cross_entropy
+    elif 'binary_cross_entropy' in metric_name:
+        base_loss = binary_cross_entropy
+    elif 'rmse' in metric_name:
+        base_loss = rmse
+    elif 'reconstruction' in metric_name:
+        base_loss = reconstruction
+    elif 'nt_xent_loss' in metric_name:
+        base_loss = nt_xent_loss
     else:
         raise ValueError(f"Unsupported metric/loss function: {metric_name}")
     
+    if 'vae' in metric_name:
+        def vae_loss(y_pred, y_true, mu, logvar):
+            recon_loss = base_loss(y_pred, y_true)
+            kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+            return recon_loss + kl_div
+        return vae_loss
+    else:
+        return base_loss
+
 def mse(y_pred, y_true) -> float:
     """Calculates the Mean Squared Error (MSE) metric.
     
@@ -92,7 +99,7 @@ def binary_cross_entropy(y_pred, y_true) -> float:
     """
     return F.binary_cross_entropy(y_pred, y_true)
 
-def mixed_type_reconstruction_loss(y_pred: list[torch.Tensor] | torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+def reconstruction(y_pred: list[torch.Tensor] | torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
     """
     Computes the mixed-type reconstruction loss for tabular data, combining cross-entropy loss for categorical features and mean squared error (MSE) for continuous features.
 
@@ -141,7 +148,7 @@ def vae_loss(y_pred: list[torch.Tensor], y_true: torch.Tensor, mu: torch.Tensor,
     """
 
     # Reconstruction loss
-    recon_loss = mixed_type_reconstruction_loss(y_pred, y_true)
+    recon_loss = reconstruction(y_pred, y_true)
 
     # KL divergence
     kl_loss = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
