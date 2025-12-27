@@ -2,6 +2,9 @@ import torch
 import numpy as np
 from ..metrics import accuracy
 
+import logging
+logger = logging.getLogger(__name__)
+
 def get_predict_inference(predicting_type: str):
     if 'reconstruction' in predicting_type:
         return predict_reconstruction
@@ -43,7 +46,7 @@ def predict_reconstruction(
     dis_accuracy = []
     cont_accuracy = []
     for column_idx in range(X.size(1)):
-        print(f"\nFeature Column {column_idx}:")
+        logger.info(f"Feature Column {column_idx}:")
         predicted_attributes = y_pred[column_idx]      # shape: (batch_size, num_classes)
         targets = y[:, column_idx]                     # shape: (batch_size,)
 
@@ -52,16 +55,19 @@ def predict_reconstruction(
         if predicted_attributes.size(1) > 1:
             is_discrete = True
             predicted_attributes = predicted_attributes.softmax(dim=-1).argmax(dim=-1).cpu().numpy()
+            if np.unique(predicted_attributes).size == 1:
+                logger.warning("Warning: Only one class predicted for this feature.")
         else:
             is_discrete = False
             predicted_attributes = predicted_attributes.squeeze(-1).cpu().numpy()
+
         targets = targets[feature_mask].cpu().numpy()
 
-        print("Predicted attribute values:", predicted_attributes[:5])
-        print("True attribute values:", targets[:5])
+        logger.info(f"Predicted attribute values: {predicted_attributes[:5]}")
+        logger.info(f"True attribute values: {targets[:5]}")
 
         accuracy_value = accuracy(torch.tensor(predicted_attributes), torch.tensor(targets))
-        print(f"Accuracy: {accuracy_value:.4f}")
+        logger.info(f"Accuracy: {accuracy_value:.4f}\n")
         if is_discrete:
             dis_accuracy.append(accuracy_value)
         else:
@@ -69,10 +75,10 @@ def predict_reconstruction(
 
     avg_dis_accuracy = np.mean(dis_accuracy)
     avg_cont_accuracy = np.mean(cont_accuracy)
-    print(f"\nAverage Discrete Accuracy: {avg_dis_accuracy:.4f}")
-    print(f"Average Continuous Accuracy: {avg_cont_accuracy:.4f}")
+    logger.info(f"Average Discrete Accuracy: {avg_dis_accuracy:.4f}")
+    logger.info(f"Average Continuous Accuracy: {avg_cont_accuracy:.4f}")
     avg_accuracy = np.mean(dis_accuracy + cont_accuracy)
-    print(f"Overall Average Accuracy: {avg_accuracy:.4f}")
+    logger.info(f"Overall Average Accuracy: {avg_accuracy:.4f}")
 
     return {
         "avg_discrete_accuracy": avg_dis_accuracy,
@@ -99,7 +105,9 @@ def predict_cross_entropy(
         y_pred = y_pred[0]
     
     y_pred = y_pred.argmax(dim=1)
-    print(f"Predictions: {y_pred[:5]}, \n Ground Truth: {y[:5]}")
+    if np.unique(y_pred).size == 1:
+        logger.warning("Warning: Only one class predicted for this feature.")
+    logger.info(f"Predictions: {y_pred[:5]}, \n Ground Truth: {y[:5]}")
     acc = accuracy(y_pred, y)
-    print(f"Prediction Accuracy: {acc:.4f}")
+    logger.info(f"Prediction Accuracy: {acc:.4f}")
     return acc

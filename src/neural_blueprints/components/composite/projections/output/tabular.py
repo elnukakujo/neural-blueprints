@@ -49,7 +49,7 @@ class TabularOutputProjection(nn.Module):
                         normalization=normalization,
                         activation=activation,
                         dropout_p=dropout_p,
-                        final_activation="softmax" if cardinality > 1 else "sigmoid"
+                        final_activation="sigmoid"
                     )
                 )
             )

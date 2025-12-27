@@ -13,6 +13,9 @@ class Decoder(nn.Module):
     def __init__(self, config: DecoderConfig):
         super(Decoder, self).__init__()
 
+        self.normalization = config.normalization
+        self.activation = config.activation
+        self.dropout_p = config.dropout_p
         self.layer_configs = config.layer_configs
         self.final_activation = config.final_activation
 
@@ -20,6 +23,9 @@ class Decoder(nn.Module):
         layers = nn.ModuleList()
 
         for layer_config in self.layer_configs:
+            layer_config.normalization = self.normalization if layer_config.normalization is None else layer_config.normalization
+            layer_config.activation = self.activation if layer_config.activation is None else layer_config.activation
+            layer_config.dropout_p = self.dropout_p if layer_config.dropout_p is None else layer_config.dropout_p
             layers.append(get_block(layer_config))
 
         layers.append(get_activation(self.final_activation))

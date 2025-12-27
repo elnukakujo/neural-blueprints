@@ -1,19 +1,22 @@
 from typing import List, Optional
 from pydantic import BaseModel, model_validator
 
-from ..core import NormalizationLayerConfig
-
 class DecoderConfig(BaseModel):
     """Configuration for a decoder composed of multiple layers.
     
     Args:
         layer_types (List[str]): List of layer types.
         layer_configs (List[BaseModel]): List of layer configurations.
-        projection (Optional[ProjectionLayerConfig]): Optional projection layer configuration.
+        normalization (str | None): Configuration for normalization layer. If None, no normalization is applied.
+        activation (str | None): Activation function to use. If None, no activation is applied
+        dropout_p (float | None): Dropout probability. If None, no dropout is applied
         final_activation (Optional[str]): Optional final activation function.
     """
 
     layer_configs: List[BaseModel]
+    normalization: Optional[str] = None
+    activation: Optional[str] = None
+    dropout_p: Optional[float] = None
     final_activation: Optional[str] = None
 
     @model_validator(mode='after')

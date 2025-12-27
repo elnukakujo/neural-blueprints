@@ -75,7 +75,7 @@ class Trainer:
             if self.best_val_loss == float('inf'):
                 self.best_val_loss = val_losses[-1]
                 torch.save(self.model.state_dict(), self.model_path)
-            elif self.best_val_loss - val_losses[-1] >= 1e-4:
+            elif self.best_val_loss - val_losses[-1] >= 1e-3:
                 self.best_val_loss = val_losses[-1]
                 self.epoch_since_improvement = 0
                 torch.save(self.model.state_dict(), self.model_path)

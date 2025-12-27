@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 import torch.nn.functional as F
 
@@ -99,7 +100,7 @@ def binary_cross_entropy(y_pred, y_true) -> float:
     """
     return F.binary_cross_entropy(y_pred, y_true)
 
-def reconstruction(y_pred: list[torch.Tensor] | torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+def reconstruction(y_pred: list[torch.Tensor] | torch.Tensor, y_true: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
     """
     Computes the mixed-type reconstruction loss for tabular data, combining cross-entropy loss for categorical features and mean squared error (MSE) for continuous features.
 
@@ -116,13 +117,14 @@ def reconstruction(y_pred: list[torch.Tensor] | torch.Tensor, y_true: torch.Tens
         for col_idx in range(len(y_pred)):
             pred = y_pred[col_idx]
             label = y_true[:, col_idx]
+            col_mask = mask[:, col_idx] if mask is not None else torch.ones_like(label, dtype=torch.bool)
 
             if pred.size(1) > 1:
                 # Weighted cross-entropy
-                loss = F.cross_entropy(input = pred, target = label.long(), reduction='sum')
+                loss = F.cross_entropy(input = pred[col_mask], target = label[col_mask].long(), reduction='sum')
             else:
                 # MSE for continuous
-                loss = F.mse_loss(pred.squeeze(-1), label.float(), reduction='sum')
+                loss = F.mse_loss(pred[col_mask].squeeze(-1), label[col_mask].float(), reduction='sum')
             
             total_loss += loss
     elif isinstance(y_pred, torch.Tensor):
@@ -131,7 +133,7 @@ def reconstruction(y_pred: list[torch.Tensor] | torch.Tensor, y_true: torch.Tens
             total_loss = F.mse_loss(y_pred, y_true, reduction='sum')
     else:
         raise ValueError("y_pred must be either a list of tensors for a mixed-type scenario or a single tensor.")
-    return total_loss / len(y_pred)
+    return total_loss / y_true.size(0)
 
 def vae_loss(y_pred: list[torch.Tensor], y_true: torch.Tensor, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
     """
