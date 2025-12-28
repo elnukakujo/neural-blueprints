@@ -78,7 +78,7 @@ class TabularBERT(nn.Module):
         self.input_projection = TabularInputProjection(
             config=TabularInputProjectionConfig(
                 cardinalities=input_cardinalities,
-                hidden_dims=[latent_dim*4, latent_dim*2],
+                hidden_dims=[latent_dim*8, latent_dim*4, latent_dim*2],
                 output_dim=[len(input_cardinalities), latent_dim],
                 dropout_p=dropout_p,
                 normalization=normalization,
@@ -118,7 +118,7 @@ class TabularBERT(nn.Module):
                 input_cardinalities=input_cardinalities,
                 output_cardinalities=output_cardinalities,
                 input_dim=[len(input_cardinalities), latent_dim],
-                hidden_dims=[latent_dim*2, latent_dim*4],
+                hidden_dims=[latent_dim*2, latent_dim*4, latent_dim*8],
                 dropout_p=dropout_p,
                 normalization=normalization,
                 activation=activation,

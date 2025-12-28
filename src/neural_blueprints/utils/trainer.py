@@ -10,7 +10,8 @@ from .criterion import get_criterion
 from .optimizer import get_optimizer
 from .device import get_device
 from .visualize import curve_plot
-from .inference import get_train_inference, get_eval_inference, get_predict_inference
+from .inference import get_inference
+from .predict import get_predict
 from ..config.utils import TrainerConfig
 
 PACKAGE_DIR = os.path.dirname(__file__)  # points to github_repo/src/neural_blueprints/utils
@@ -27,9 +28,8 @@ class Trainer:
         self.model = model.to(self.device)
 
         self.criterion = get_criterion(config.criterion)
-        self.train_epoch = get_train_inference(config.criterion)
-        self.eval_epoch = get_eval_inference(config.criterion)
-        self.predict_inference = get_predict_inference(config.criterion)
+        self.train_epoch, self.eval_epoch = get_inference(config.criterion)
+        self.predict_inference = get_predict(config.criterion)
         self.optimizer = get_optimizer(config.optimizer, model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
         self.early_stopping_patience = config.early_stopping_patience
 

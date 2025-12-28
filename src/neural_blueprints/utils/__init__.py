@@ -9,6 +9,8 @@ from .criterion import mse, rmse, mae, cross_entropy, binary_cross_entropy, vae_
 from .optimizer import get_optimizer
 from .types import infer_types
 from .get_projection import get_input_projection, get_output_projection
+from .inference import get_inference
+from .predict import get_predict
 
 __version__ = "0.1.0"
 __all__ = [
@@ -34,4 +36,6 @@ __all__ = [
     infer_types,
     get_input_projection,
     get_output_projection,
+    get_inference,
+    get_predict,
 ]
