@@ -39,7 +39,7 @@ class TabularPreprocessor:
         NAN_TOKEN = "<NAN>"
 
         for col in discrete_features:
-            column_data = original_df[col].astype(str).replace("nan", NAN_TOKEN)
+            column_data = original_df[col].astype(str).replace({"nan": NAN_TOKEN, "": NAN_TOKEN})
             unique_vals = column_data.unique().tolist()
 
             if NAN_TOKEN in unique_vals:
@@ -55,7 +55,7 @@ class TabularPreprocessor:
             original_df[col] = original_df[col].astype('category')
 
             for key, df in kwargs.items():
-                df[col] = df[col].astype(str).replace("nan", NAN_TOKEN)
+                df[col] = df[col].astype(str).replace({"nan": NAN_TOKEN, "": NAN_TOKEN})
                 df[col] = df[col].apply(lambda x: x if x in le.classes_ else NAN_TOKEN)
                 kwargs[key][col] = le.transform(df[col])
                 kwargs[key][col] = kwargs[key][col].astype('category')
