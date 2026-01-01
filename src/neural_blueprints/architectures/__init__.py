@@ -1,4 +1,5 @@
 """Init file for Machine Learning Models modules."""
+from .base import BaseArchitecture, EncoderArchitecture, DecoderArchitecture, EncoderDecoderArchitecture
 from .mlp import MLP
 from .cnn import CNN
 from .rnn import RNN

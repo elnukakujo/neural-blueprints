@@ -1,17 +1,18 @@
 import torch
 import torch.nn as nn
-from typing import List
+from typing import List, Optional
 
+from .base import EncoderArchitecture
 from ..components.composite.projections.input import TabularInputProjection
 from ..components.composite.projections.output import TabularOutputProjection
-from ..components.composite import TransformerEncoder, TransformerDecoder
-from ..components.core import EmbeddingLayer, NormalizationLayer, DropoutLayer
+from ..components.composite import TransformerEncoder, TransformerDecoder, PositionEmbedding
+from ..components.core import EmbeddingLayer
 
 from ..config.architectures import TransformerConfig, TabularBERTConfig
-from ..config.components.composite import TransformerEncoderConfig
+from ..config.components.composite import TransformerEncoderConfig, PositionEmbeddingConfig
 from ..config.components.composite.projections.input import TabularInputProjectionConfig
 from ..config.components.composite.projections.output import TabularOutputProjectionConfig
-from ..config.components.core import EmbeddingLayerConfig, NormalizationLayerConfig, DropoutLayerConfig
+from ..config.components.core import EmbeddingLayerConfig
 
 import logging
 logger = logging.getLogger(__name__)
@@ -27,10 +28,6 @@ class Transformer(nn.Module):
         self.config = config
         self.encoder = TransformerEncoder(config.encoder_config)
         self.decoder = TransformerDecoder(config.decoder_config)
-
-    def blueprint(self):
-        print(self)
-        return self.config
 
     def forward(self, src: torch.Tensor, tgt: torch.Tensor) -> torch.Tensor:
         """Forward pass through the Transformer.
@@ -49,7 +46,7 @@ class Transformer(nn.Module):
         decoded = self.decoder(tgt, memory)  # (batch_size, tgt_seq_len, hidden_dim)
         return decoded
     
-class TabularBERT(nn.Module):
+class TabularBERT(EncoderArchitecture):
     """A BERT-style model for masked attribute inference on tabular data:
         - Embeddings for categorical features
         - Pass-through for continuous features
@@ -67,6 +64,10 @@ class TabularBERT(nn.Module):
 
         input_cardinalities = config.input_cardinalities
         output_cardinalities = config.output_cardinalities
+
+        self.input_dim = [len(input_cardinalities)]
+        self.output_dim = [len(output_cardinalities)]
+
         latent_dim = config.latent_dim
         encoder_layers = config.encoder_layers
         dropout_p = config.dropout_p
@@ -87,16 +88,13 @@ class TabularBERT(nn.Module):
         )
 
         # Positional embeddings
-        self.pos_emb = EmbeddingLayer(
-            config=EmbeddingLayerConfig(num_embeddings=len(input_cardinalities)+1, embedding_dim=latent_dim)
-        )
-
-        self.emb_norm = NormalizationLayer(
-            NormalizationLayerConfig(norm_type=normalization, num_features=latent_dim)
-        )
-        self.dropout = DropoutLayer(
-            config=DropoutLayerConfig(
-                p=dropout_p
+        self.position_embedding = PositionEmbedding(
+            config=PositionEmbeddingConfig(
+                num_positions=len(input_cardinalities),
+                latent_dim=latent_dim,
+                normalization=normalization,
+                activation=activation,
+                dropout_p=dropout_p
             )
         )
 
@@ -126,9 +124,24 @@ class TabularBERT(nn.Module):
             )
         )
 
-    def blueprint(self):
-        print(self)
-        return self.config
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the Tabular BERT encoder.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, seq_len).
+
+        Returns:
+            Encoded tensor of shape (batch_size, seq_len, hidden_dim).
+        """
+        # ---- Split categorical and continuous features ----
+        x_embed, nan_mask = self.input_projection(x)  # shape: (B, num_features, hidden_dim), (B, num_features)
+
+        # ---- Add positional embeddings ----
+        x_embed = x_embed + self.position_embedding(x)  # shape: (B, num_features, hidden_dim)
+
+        # ---- Transformer encoder ----
+        x_embed = self.encoder(x_embed, attn_mask = nan_mask)  # shape: (B, num_features, hidden_dim)
+        return x_embed
 
     def forward(self, x: torch.Tensor) -> torch.Tensor | List[torch.Tensor]:
         """Forward pass through the Tabular BERT model.
@@ -139,20 +152,14 @@ class TabularBERT(nn.Module):
         Returns:
             List of output tensors for each feature or output tensor of shape (batch_size, seq_len, hidden_dim).
         """
-        B, L = x.shape
         # ---- Split categorical and continuous features ----
         x_embed, nan_mask = self.input_projection(x)  # shape: (B, num_features, hidden_dim), (B, num_features)
 
         # ---- Add positional embeddings ----
-        pos = torch.arange(L, device=x.device).unsqueeze(0).expand(B, L) # shape: (batch, seq)
-        x_embed = x_embed + self.pos_emb(pos)
-
-        x_embed = self.emb_norm(x_embed)
-        x_embed = self.dropout(x_embed)
+        x_embed = x_embed + self.position_embedding(x)  # shape: (B, num_features, hidden_dim)
 
         # ---- Transformer encoder ----
         x_embed = self.encoder(x_embed, attn_mask = nan_mask)  # shape: (B, num_features, hidden_dim)
-        assert x_embed.cpu().isnan().sum() == 0, "NaN values detected in Transformer encoder output"
 
         # ---- Output projections for each feature ----
         return self.output_projection(x_embed)

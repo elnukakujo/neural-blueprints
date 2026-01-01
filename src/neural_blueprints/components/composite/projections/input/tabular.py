@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from ... import FeedForwardNetwork
-from ....core import EmbeddingLayer, DenseLayer
+from .base import BaseInputProjection
+
 from .....config.components.composite import FeedForwardNetworkConfig
 from .....config.components.composite.projections.input import TabularInputProjectionConfig
 from .....config.components.core import EmbeddingLayerConfig, DenseLayerConfig
@@ -10,7 +10,7 @@ from .....config.components.core import EmbeddingLayerConfig, DenseLayerConfig
 import logging
 logger = logging.getLogger(__name__)
 
-class TabularInputProjection(nn.Module):
+class TabularInputProjection(BaseInputProjection):
     """
         Mixed type Tabular Data Input Projection Module.
         Projects each attribute (discrete or continuous) into a latent space of given dimensionality.
@@ -21,10 +21,14 @@ class TabularInputProjection(nn.Module):
     def __init__(self,
                  config: TabularInputProjectionConfig
                 ):
+        from ... import FeedForwardNetwork
+        from ....core import EmbeddingLayer, DenseLayer
         super().__init__()
+        self.input_dim = [len(config.cardinalities)]
+        self.output_dim = config.output_dim
+
         self.cardinalities = config.cardinalities
         hidden_dims = config.hidden_dims
-        self.output_dim = config.output_dim
         latent_dim = config.output_dim[-1] if len(config.output_dim) > 1 else config.output_dim[-1]/len(config.cardinalities)
         dropout_p = config.dropout_p
         normalization = config.normalization

@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
+from typing import Optional
 
+from .base import BaseArchitecture
 from ..components.composite import FeedForwardNetwork
 from ..config.architectures import MLPConfig
 from ..utils import get_activation, get_input_projection, get_output_projection
@@ -8,7 +10,7 @@ from ..utils import get_activation, get_input_projection, get_output_projection
 import logging
 logger = logging.getLogger(__name__)
 
-class MLP(nn.Module):
+class MLP(BaseArchitecture):
     """A simple Multi-Layer Perceptron (MLP) architecture.
     
     Args:
@@ -22,9 +24,11 @@ class MLP(nn.Module):
             self.input_projection = get_input_projection(
                 projection_config=config.input_projection
             )
+            self.input_dim = self.input_projection.input_dim
             logger.info(f"Using input projection: {self.input_projection.__class__.__name__}")
             config.input_dim = self.input_projection.output_dim[-1]
         else:
+            self.input_dim = config.input_dim
             self.input_projection = None
 
         if config.output_projection is not None:
@@ -32,8 +36,10 @@ class MLP(nn.Module):
             self.output_projection = get_output_projection(
                 projection_config=config.output_projection
             )
+            self.output_dim = self.output_projection.output_dim
             logger.info(f"Using output projection: {self.output_projection.__class__.__name__}")
         else:
+            self.output_dim = config.output_dim
             self.output_projection = None
         
         self.layers = nn.ModuleList()
@@ -46,10 +52,6 @@ class MLP(nn.Module):
             self.layers,
             self.output_projection if config.output_projection is not None else nn.Identity()
         )
-
-    def blueprint(self) -> MLPConfig:
-        print(self.network)
-        return self.config
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the MLP.

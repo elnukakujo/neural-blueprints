@@ -1,4 +1,5 @@
 """Init file for core components module."""
+from .base import BaseCore
 from .dense import DenseLayer
 from .conv import Conv1dLayer, Conv2dLayer, Conv3dLayer, Conv1dTransposeLayer, Conv2dTransposeLayer, Conv3dTransposeLayer
 from .recurrent import RecurrentUnit
@@ -12,6 +13,7 @@ from .flatten import FlattenLayer
 from .dropout import DropoutLayer
 
 __all__ = [
+    BaseCore,
     DenseLayer,
     Conv1dLayer,
     Conv2dLayer,

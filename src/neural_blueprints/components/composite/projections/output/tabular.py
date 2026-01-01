@@ -1,14 +1,14 @@
 import torch
 import torch.nn as nn
 
-from ... import FeedForwardNetwork
+from .base import BaseOutputProjection
 from .....config.components.composite import FeedForwardNetworkConfig
 from .....config.components.composite.projections.output import TabularOutputProjectionConfig
 
 import logging
 logger = logging.getLogger(__name__)
 
-class TabularOutputProjection(nn.Module):
+class TabularOutputProjection(BaseOutputProjection):
     """
     Output projection for tabular data.
 
@@ -20,6 +20,9 @@ class TabularOutputProjection(nn.Module):
             config: TabularOutputProjectionConfig
         ):
         super().__init__()
+        from ... import FeedForwardNetwork
+        self.input_dim = config.input_dim
+        self.output_dim = [len(config.output_cardinalities)]
         input_cardinalities = config.input_cardinalities
         output_cardinalities = config.output_cardinalities
         input_dim = config.input_dim
