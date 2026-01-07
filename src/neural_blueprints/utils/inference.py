@@ -54,6 +54,7 @@ class BatchConfig:
     target_idx: Optional[int] = 1
     mask_idx: Optional[int] = None
     use_input_as_target: bool = False  # For reconstruction tasks
+    is_nt_xent: bool = False  # For contrastive learning
 
 @dataclass
 class ModelConfig:
@@ -71,6 +72,18 @@ def get_batch_data(batch, config: BatchConfig, device):
         mask = None
     else:
         X = batch[config.input_idx].to(device)
+
+        if config.is_nt_xent:
+            y = None  # No targets for contrastive learning
+
+            combined = torch.empty((X.size(0) * 2, X.size(1)), device=device)
+            X_full = X.clone()
+            X_full[batch[config.mask_idx]] = batch[config.target_idx]
+            combined[0::2] = X_full
+            combined[1::2] = X
+            
+            X = combined
+
         
         if config.use_input_as_target:
             y = X

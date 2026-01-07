@@ -1,6 +1,16 @@
 from typing import List, Optional
 from pydantic import BaseModel, model_validator
 
+from ...components.core import (
+    DenseLayerConfig,
+    ConvLayerConfig,
+    RecurrentUnitConfig,
+    AttentionLayerConfig,
+    ReshapeLayerConfig,
+    NormalizationLayerConfig,
+    FlattenLayerConfig
+)
+
 class DecoderConfig(BaseModel):
     """Configuration for a decoder composed of multiple layers.
     
@@ -13,7 +23,7 @@ class DecoderConfig(BaseModel):
         final_activation (Optional[str]): Optional final activation function.
     """
 
-    layer_configs: List[BaseModel]
+    layer_configs: List[DenseLayerConfig | ConvLayerConfig | RecurrentUnitConfig | AttentionLayerConfig | ReshapeLayerConfig | NormalizationLayerConfig | FlattenLayerConfig]
     normalization: Optional[str] = None
     activation: Optional[str] = None
     dropout_p: Optional[float] = None

@@ -1,6 +1,10 @@
 import torch
 import numpy as np
+from sklearn.svm import LinearSVC
+from sklearn.linear_model import LinearRegression
+
 from .metrics import accuracy
+from ..architectures.base import EncoderArchitecture
 
 import logging
 logger = logging.getLogger(__name__)
@@ -11,7 +15,9 @@ def get_predict(predicting_type: str):
     elif 'cross_entropy' in predicting_type:
         return predict_cross_entropy
     else:
-        raise ValueError(f"Unknown predicting type: {predicting_type}")
+        logger.warning(f"Unknown predicting type: {predicting_type}")
+        return None
+
 
 def predict_reconstruction(
     model: torch.nn.Module,
@@ -25,8 +31,17 @@ def predict_reconstruction(
         test_loader (torch.utils.data.DataLoader): DataLoader providing the input data.
     """
     model.eval()
-    X, y, mask = next(iter(test_loader))
+    batch = next(iter(test_loader))
 
+    if len(batch) == 3:
+        X, y, mask = batch
+    elif len(batch) == 2:
+        X, y = batch
+        mask = torch.ones_like(y, dtype=torch.bool)
+    else:
+        X = batch
+        y = batch
+        mask = torch.ones_like(y, dtype=torch.bool)
     assert isinstance(X, torch.Tensor), "Input data X must be a torch.Tensor"
     assert isinstance(y, torch.Tensor), "Target data y must be a torch.Tensor"
     assert isinstance(mask, torch.Tensor), "Mask data must be a torch.Tensor"
@@ -73,18 +88,26 @@ def predict_reconstruction(
         else:
             cont_accuracy.append(accuracy_value)
 
-    avg_dis_accuracy = np.mean(dis_accuracy)
-    avg_cont_accuracy = np.mean(cont_accuracy)
-    print(f"Average Discrete Accuracy: {avg_dis_accuracy:.4f}")
-    print(f"Average Continuous Accuracy: {avg_cont_accuracy:.4f}")
-    avg_accuracy = np.mean(dis_accuracy + cont_accuracy)
-    print(f"Overall Average Accuracy: {avg_accuracy:.4f}")
+    results = {}
+    accuracy_values = []
+    if len(dis_accuracy) != 0:
+        avg_dis_accuracy = np.mean(dis_accuracy)
+        print(f"Average Discrete Accuracy: {avg_dis_accuracy:.4f}")
+        
+        accuracy_values += dis_accuracy
+        results["avg_discrete_accuracy"] = avg_dis_accuracy
+    if len(cont_accuracy) != 0:
+        avg_cont_accuracy = np.mean(cont_accuracy)
+        print(f"Average Continuous Accuracy: {avg_cont_accuracy:.4f}")
 
-    return {
-        "avg_discrete_accuracy": avg_dis_accuracy,
-        "avg_continuous_accuracy": avg_cont_accuracy,
-        "overall_avg_accuracy": avg_accuracy
-    }
+        accuracy_values += cont_accuracy
+        results["avg_continuous_accuracy"] = avg_cont_accuracy
+    
+    avg_accuracy = np.mean(accuracy_values)
+    print(f"Overall Average Accuracy: {avg_accuracy:.4f}")
+    results["overall_avg_accuracy"] = avg_accuracy
+
+    return results
 
 def predict_cross_entropy(
     model: torch.nn.Module,

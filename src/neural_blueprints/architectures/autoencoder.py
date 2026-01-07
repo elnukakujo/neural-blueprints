@@ -1,38 +1,23 @@
 import torch
 import torch.nn as nn
 
+from .base import EncoderDecoderArchitecture
 from ..components.composite import Encoder, Decoder
 from ..config.architectures import AutoEncoderConfig
-from ..utils import get_activation, get_input_projection, get_output_projection
 
 import logging
 logger = logging.getLogger(__name__)
 
-class AutoEncoder(nn.Module):
+class AutoEncoder(EncoderDecoderArchitecture):
     """A simple AutoEncoder architecture composed of an encoder and a decoder.
     
     Args:
         config (AutoEncoderConfig): Configuration for the autoencoder model.
     """
     def __init__(self, config: AutoEncoderConfig):
+        from ..utils import get_input_projection, get_output_projection
         super(AutoEncoder, self).__init__()
         self.config = config
-
-        if config.input_projection is not None:
-            self.input_projection = get_input_projection(
-                projection_config=config.input_projection
-            )
-            logger.info(f"Using input projection: {self.input_projection.__class__.__name__}")
-        else:
-            self.input_projection = None
-
-        if config.output_projection is not None:
-            self.output_projection = get_output_projection(
-                projection_config=config.output_projection
-            )
-            logger.info(f"Using output projection: {self.output_projection.__class__.__name__}")
-        else:
-            self.output_projection = None
 
         self.encoder = Encoder(
             config=config.encoder_config
@@ -41,10 +26,26 @@ class AutoEncoder(nn.Module):
         self.decoder = Decoder(
             config=config.decoder_config
         )
-        
-    def blueprint(self) -> AutoEncoderConfig:
-        print(self)
-        return self.config
+
+        if config.input_projection is not None:
+            self.input_projection = get_input_projection(
+                projection_config=config.input_projection
+            )
+            self.input_dim = self.input_projection.input_dim
+            logger.info(f"Using input projection: {self.input_projection.__class__.__name__}")
+        else:
+            self.input_dim = self.encoder.input_dim
+            self.input_projection = None
+
+        if config.output_projection is not None:
+            self.output_projection = get_output_projection(
+                projection_config=config.output_projection
+            )
+            self.output_dim = self.output_projection.output_dim
+            logger.info(f"Using output projection: {self.output_projection.__class__.__name__}")
+        else:
+            self.output_dim = self.decoder.output_dim
+            self.output_projection = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the autoencoder.

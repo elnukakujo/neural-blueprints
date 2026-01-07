@@ -5,10 +5,101 @@ from .base import BaseInputProjection
 
 from .....config.components.composite import FeedForwardNetworkConfig
 from .....config.components.composite.projections.input import TabularInputProjectionConfig
-from .....config.components.core import EmbeddingLayerConfig, DenseLayerConfig
+from .....config.components.core import EmbeddingLayerConfig
 
 import logging
 logger = logging.getLogger(__name__)
+
+class DiscreteProjection(BaseInputProjection):
+    def __init__(
+            self,
+            cardinality: int,
+            output_dim: int,
+            hidden_dims: list[int] = [],
+            activation: str = None,
+            normalization: str = None,
+            dropout_p: float = 0.0
+        ):
+            from ... import FeedForwardNetwork
+            from ....composite import FeedForwardNetwork
+            from ....core import EmbeddingLayer
+            super().__init__()
+            self.input_dim = [cardinality]
+            self.output_dim = [output_dim]
+
+            # Determine dimensions for embedding layer
+            embedding_dim = hidden_dims[0] if hidden_dims else output_dim
+
+            # Create embedding layer
+            layers = [
+                EmbeddingLayer(
+                    config=EmbeddingLayerConfig(
+                        num_embeddings=cardinality + 1,  # +1 for padding index
+                        embedding_dim=embedding_dim,
+                        normalization=normalization,
+                        activation=activation,
+                        dropout_p=dropout_p
+                    )
+                )
+            ]
+
+            # Add hidden layers if specified
+            if hidden_dims:
+                layers.append(
+                    FeedForwardNetwork(
+                        config=FeedForwardNetworkConfig(
+                            input_dim=embedding_dim,
+                            hidden_dims=hidden_dims,
+                            output_dim=output_dim,
+                            normalization=normalization,
+                            activation=activation,
+                            dropout_p=dropout_p,
+                            final_activation=activation
+                        )
+                    )
+                )
+            self.projection = nn.Sequential(*layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the input projection module.
+        """
+        emb = self.projection(x)                            # shape (batch_size, output_dim)
+        is_masked = (x == 0)                                # shape (batch_size)
+        return emb, is_masked
+
+class NumericalProjection(BaseInputProjection):
+    def __init__(
+            self,
+            output_dim: int,
+            hidden_dims: list[int] = [],
+            activation: str = None,
+            normalization: str = None,
+            dropout_p: float = 0.0
+        ):
+            from ... import FeedForwardNetwork
+            super().__init__()
+            self.input_dim = [1]
+            self.output_dim = [output_dim]
+
+            self.projection = FeedForwardNetwork(
+                config=FeedForwardNetworkConfig(
+                    input_dim=1,
+                    hidden_dims=hidden_dims,
+                    output_dim=output_dim,
+                    normalization=normalization,
+                    activation=activation,
+                    dropout_p=dropout_p,
+                    final_activation=activation
+                )
+            )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the input projection module.
+        """
+        x = x.unsqueeze(1)                      # shape (batch_size, 1)
+        emb = self.projection(x)                # shape (batch_size, output_dim)
+        is_masked = (x == -1).squeeze(1)        # shape (batch_size)
+        return emb, is_masked
 
 class TabularInputProjection(BaseInputProjection):
     """
@@ -21,8 +112,6 @@ class TabularInputProjection(BaseInputProjection):
     def __init__(self,
                  config: TabularInputProjectionConfig
                 ):
-        from ... import FeedForwardNetwork
-        from ....core import EmbeddingLayer, DenseLayer
         super().__init__()
         self.input_dim = [len(config.cardinalities)]
         self.output_dim = config.output_dim
@@ -37,64 +126,25 @@ class TabularInputProjection(BaseInputProjection):
         self.input_projections = nn.ModuleList([])
         for cardinality in self.cardinalities:
             if cardinality>1:   # Discrete Scenario
-                if hidden_dims is None:                    # No hidden layers
-                    self.input_projections.append(
-                        EmbeddingLayer(
-                            config=EmbeddingLayerConfig(
-                                num_embeddings=cardinality+1,    # +1 for padding index
-                                embedding_dim=latent_dim,
-                                normalization=None,
-                                activation=None,
-                                dropout_p=dropout_p
-                            )
-                        )
+                # Add to input projections (wrap in Sequential if multiple layers, otherwise just the embedding)
+                self.input_projections.append(
+                    DiscreteProjection(
+                        cardinality=cardinality,
+                        output_dim=latent_dim,
+                        hidden_dims=hidden_dims,
+                        normalization=normalization,
+                        activation=activation,
+                        dropout_p=dropout_p
                     )
-                else:                                           # With hidden layers
-                    layers = nn.ModuleList([])
-                    layers.append(
-                        EmbeddingLayer(
-                            config=EmbeddingLayerConfig(
-                                num_embeddings=cardinality+1,    # +1 for padding index
-                                embedding_dim=hidden_dims[0],
-                                normalization=None,
-                                activation=activation,
-                                dropout_p=dropout_p
-                            )
-                        )
-                    )
-                    for layer in range(1, len(hidden_dims)):
-                        config = DenseLayerConfig(
-                            input_dim=hidden_dims[layer-1],
-                            output_dim=hidden_dims[layer],
-                            normalization=normalization,
-                            activation=activation,
-                            dropout_p=dropout_p
-                        )
-                        layers.append(DenseLayer(config))
-                    
-                    layers.append(
-                        DenseLayer(
-                            config=DenseLayerConfig(
-                                input_dim=hidden_dims[-1],
-                                output_dim=latent_dim,
-                                normalization=None,
-                                activation=None,
-                                dropout_p=dropout_p
-                            )
-                        )
-                    )
-                    self.input_projections.append(nn.Sequential(*layers))
+                )
             else:               # Continuous Scenario
                 self.input_projections.append(
-                    FeedForwardNetwork(
-                        config=FeedForwardNetworkConfig(
-                            input_dim=1,
-                            hidden_dims=hidden_dims,
-                            output_dim=latent_dim,
-                            normalization=normalization,
-                            activation=activation,
-                            dropout_p=dropout_p
-                        )
+                    NumericalProjection(
+                        output_dim=latent_dim,
+                        hidden_dims=hidden_dims,
+                        normalization=normalization,
+                        activation=activation,
+                        dropout_p=dropout_p
                     )
                 )
 
@@ -113,15 +163,9 @@ class TabularInputProjection(BaseInputProjection):
         nan_mask = []
 
         for i, layer in enumerate(self.input_projections):
-            if self.cardinalities[i]>1:
-                col_data = x[:, i]                              # shape (batch_size)
-                emb = layer(col_data)                           # shape (batch_size, output_dim)
-                is_masked = (col_data == 0)                     # shape (batch_size)
-            else:
-                col_data = x[:, i].unsqueeze(1)                 # shape (batch_size, 1)
-                emb = layer(col_data)                           # shape (batch_size, output_dim)
-                is_masked = (col_data == -1).squeeze(1)         # shape (batch_size)
-            assert not torch.isnan(emb).any(), f"NaN values found in InputProjection output for column {i}"
+            col_data = x[:, i]
+            emb, is_masked = layer(col_data)
+            
             embeddings.append(emb)
             nan_mask.append(is_masked)                          # shape (batch_size)
         embeddings = torch.stack(embeddings, dim=1)             # shape (batch_size, num_attributes, output_dim)

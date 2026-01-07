@@ -13,6 +13,9 @@ class Decoder(nn.Module):
     def __init__(self, config: DecoderConfig):
         super(Decoder, self).__init__()
 
+        self.input_dim = config.layer_configs[0].input_dim
+        self.output_dim = config.layer_configs[-1].output_dim
+
         self.normalization = config.normalization
         self.activation = config.activation
         self.dropout_p = config.dropout_p

@@ -120,7 +120,7 @@ class TabularPreprocessor:
         continuous_features = []
 
         for col in original_df.columns:
-            if original_df[col].dtype.name == 'category' or (original_df[col].dtype.name in ['int64', 'int32'] and original_df[col].nunique() < 50):
+            if original_df[col].dtype.name in ['category', 'object'] or (original_df[col].dtype.name in ['int64', 'int32'] and original_df[col].nunique() < 50):
                 discrete_features.append(col)
             elif original_df[col].dtype.name in ['float64', 'float32', 'int64', 'int32']:
                 continuous_features.append(col)

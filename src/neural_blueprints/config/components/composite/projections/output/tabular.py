@@ -1,7 +1,9 @@
-from pydantic import BaseModel, model_validator
+from pydantic import model_validator
 from typing import Optional, List
 
-class TabularOutputProjectionConfig(BaseModel):
+from .base import BaseProjectionOutputConfig
+
+class TabularOutputProjectionConfig(BaseProjectionOutputConfig):
     """
     Configuration for Tabular Output Projection.
 

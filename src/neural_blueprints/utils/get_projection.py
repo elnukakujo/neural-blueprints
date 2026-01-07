@@ -26,7 +26,10 @@ def get_output_projection(projection_config: object) -> BaseOutputProjection:
         class: The output projection class.
     """
     if projection_config.__class__.__name__ == "TabularOutputProjectionConfig":
-        from ..components.composite.projections.output.tabular import TabularOutputProjection
+        from ..components.composite.projections.output import TabularOutputProjection
         return TabularOutputProjection(config=projection_config)
+    elif projection_config.__class__.__name__ == "LinearOutputProjectionConfig":
+        from ..components.composite.projections.output import LinearOutputProjection
+        return LinearOutputProjection(config=projection_config)
     else:
         raise ValueError(f"Unsupported output projection type: {projection_config.__class__.__name__}")

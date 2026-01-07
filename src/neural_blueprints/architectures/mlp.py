@@ -1,11 +1,9 @@
 import torch
 import torch.nn as nn
-from typing import Optional
 
 from .base import BaseArchitecture
 from ..components.composite import FeedForwardNetwork
 from ..config.architectures import MLPConfig
-from ..utils import get_activation, get_input_projection, get_output_projection
 
 import logging
 logger = logging.getLogger(__name__)
@@ -17,6 +15,7 @@ class MLP(BaseArchitecture):
         config (MLPConfig): Configuration for the MLP model.
     """
     def __init__(self, config: MLPConfig):
+        from ..utils import get_activation, get_input_projection, get_output_projection
         super(MLP, self).__init__()
         self.config = config
 

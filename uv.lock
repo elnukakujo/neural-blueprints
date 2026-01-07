@@ -1203,6 +1203,7 @@ source = { editable = "." }
 dependencies = [
     { name = "dotenv" },
     { name = "matplotlib" },
+    { name = "nbformat" },
     { name = "pandas" },
     { name = "plotly" },
     { name = "pydantic" },
@@ -1266,6 +1267,7 @@ requires-dist = [
     { name = "mkdocstrings", marker = "extra == 'docs'", specifier = ">=0.30.1" },
     { name = "mkdocstrings-python", marker = "extra == 'docs'", specifier = ">=1.19.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=0.950" },
+    { name = "nbformat", specifier = ">=5.10.4" },
     { name = "nbformat", marker = "extra == 'dev'", specifier = ">=5.10.4" },
     { name = "neural-blueprints", extras = ["dev", "docs"], marker = "extra == 'all'" },
     { name = "pandas", specifier = ">=2.3.3" },
