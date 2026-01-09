@@ -14,9 +14,9 @@ class BaseArchitecture(nn.Module):
     Subclasses should implement the `blueprint` method to return their configuration.
     """
     input_dim: List[int] | Tuple[int, ...]
-    output_dim: List[int] | Tuple[int, ...]
+    output_dim: List[int] | Tuple[List[int], ...]
 
-    def blueprint(self, batch_size: Optional[int] = 64, use_tensorboard: bool = False) -> None:
+    def blueprint(self, batch_size: Optional[int] = 64) -> None:
         """
         Print a summary of the model architecture.
         
@@ -103,7 +103,7 @@ class BaseArchitecture(nn.Module):
         
         fig.show()
     
-    def forward(self, x: torch.Tensor | dict[str, torch.Tensor]) -> torch.Tensor | list[torch.Tensor]:
+    def forward(self, inputs: torch.Tensor | dict[str, torch.Tensor | dict[str, torch.Tensor]]) -> torch.Tensor | list[torch.Tensor]:
         raise NotImplementedError("Subclasses must implement the forward method.")
     
     def freeze(self):
@@ -121,7 +121,7 @@ class EncoderArchitecture(BaseArchitecture):
     def __init__(self):
         super(EncoderArchitecture, self).__init__()
     
-    def encode(self):
+    def encode(self, inputs: torch.Tensor | dict[str, torch.Tensor | dict[str, torch.Tensor]]) -> torch.Tensor | list[torch.Tensor]:
         """
         Encode the input data.
 
@@ -135,34 +135,14 @@ class DecoderArchitecture(BaseArchitecture):
     def __init__(self):
         super(DecoderArchitecture, self).__init__()
     
-    def decode(self):
+    def decode(self, encoded: torch.Tensor | list[torch.Tensor]) -> torch.Tensor | list[torch.Tensor]:
         """
         Decode the encoded data.
 
         Returns:
-            Decoded representation of the input data.
+            Decoded representation of the encoded data.
         """
         raise NotImplementedError("Subclasses must implement the decode method.")
-
-class EncoderDecoderArchitecture(BaseArchitecture):
-    """Base class for encoder-decoder architectures."""
-    def __init__(self):
-        super(EncoderDecoderArchitecture, self).__init__()
     
-    def encode(self):
-        """
-        Encode the input data.
-
-        Returns:
-            Encoded representation of the input data.
-        """
-        raise NotImplementedError("Subclasses must implement the encode method.")
-    
-    def decode(self):
-        """
-        Decode the encoded data.
-
-        Returns:
-            Decoded representation of the input data.
-        """
-        raise NotImplementedError("Subclasses must implement the decode method.")
+class AutoencoderArchitecture(EncoderArchitecture, DecoderArchitecture):
+    pass

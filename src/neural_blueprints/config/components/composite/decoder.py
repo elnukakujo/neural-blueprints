@@ -1,17 +1,10 @@
-from typing import List, Optional
-from pydantic import BaseModel, model_validator
+from typing import List
+from pydantic import model_validator
 
-from ...components.core import (
-    DenseLayerConfig,
-    ConvLayerConfig,
-    RecurrentUnitConfig,
-    AttentionLayerConfig,
-    ReshapeLayerConfig,
-    NormalizationLayerConfig,
-    FlattenLayerConfig
-)
+from .base import BaseCompositeConfig
+from ..core.base import BaseCoreConfig
 
-class DecoderConfig(BaseModel):
+class DecoderConfig(BaseCompositeConfig):
     """Configuration for a decoder composed of multiple layers.
     
     Args:
@@ -23,11 +16,7 @@ class DecoderConfig(BaseModel):
         final_activation (Optional[str]): Optional final activation function.
     """
 
-    layer_configs: List[DenseLayerConfig | ConvLayerConfig | RecurrentUnitConfig | AttentionLayerConfig | ReshapeLayerConfig | NormalizationLayerConfig | FlattenLayerConfig]
-    normalization: Optional[str] = None
-    activation: Optional[str] = None
-    dropout_p: Optional[float] = None
-    final_activation: Optional[str] = None
+    layer_configs: List[BaseCoreConfig]
 
     @model_validator(mode='after')
     def _validate(self):
@@ -35,7 +24,7 @@ class DecoderConfig(BaseModel):
             raise ValueError(f"Unsupported final_activation: {self.final_activation}. Supported: {'relu', 'tanh', 'sigmoid', 'softmax', 'gelu'}")
         return self
     
-class TransformerDecoderConfig(BaseModel):
+class TransformerDecoderConfig(BaseCompositeConfig):
     """Configuration for a Transformer decoder.
     
     Args:
@@ -48,22 +37,11 @@ class TransformerDecoderConfig(BaseModel):
         dropout_p (float | None): Dropout probability. If None, no dropout is applied.
         final_activation (Optional[str]): Optional final activation function.
     """
-
-    input_dim: int
-    hidden_dim: int
     num_layers: int
     num_heads: int
-    normalization: Optional[str] = None
-    activation: Optional[str] = None
-    dropout_p: Optional[float] = None
-    final_activation: Optional[str] = None
 
     @model_validator(mode='after')
     def _validate(self):
-        if self.input_dim <= 0:
-            raise ValueError("input_dim must be a positive integer")
-        if self.hidden_dim <= 0:
-            raise ValueError("hidden_dim must be a positive integer")
         if self.num_layers <= 0:
             raise ValueError("num_layers must be a positive integer")
         if self.num_heads <= 0:

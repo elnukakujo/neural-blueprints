@@ -3,7 +3,7 @@ from .cnn import CNNConfig
 from .rnn import RNNConfig
 from .gan import GANConfig
 from .autoencoder import AutoEncoderConfig
-from .transformer import TransformerConfig, TabularBERTConfig
+from .transformer import TransformerConfig, BERTConfig
 
 __all__ = [
     MLPConfig,
@@ -12,5 +12,5 @@ __all__ = [
     GANConfig,
     AutoEncoderConfig,
     TransformerConfig,
-    TabularBERTConfig,
+    BERTConfig,
 ]

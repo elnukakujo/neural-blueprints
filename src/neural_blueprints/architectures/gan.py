@@ -23,11 +23,7 @@ class GAN(nn.Module):
             layer_types=config.discriminator_config.layer_types,
             layer_configs=config.discriminator_config.layer_configs
         )
-    
-    def blueprint(self) -> GANConfig:
-        print(self)
-        return self.config
-
+        
     def generate(self, z: torch.Tensor) -> torch.Tensor:
         """Generate data from latent representation.
 

@@ -1,7 +1,9 @@
 from typing import Optional
-from pydantic import BaseModel, model_validator
-    
-class EmbeddingLayerConfig(BaseModel):
+from pydantic import model_validator
+
+from .base import BaseCoreConfig
+
+class EmbeddingLayerConfig(BaseCoreConfig):
     """Configuration for an embedding layer.
     
     Args:
@@ -15,9 +17,6 @@ class EmbeddingLayerConfig(BaseModel):
     num_embeddings: int
     embedding_dim: int
     padding_idx: Optional[int] = 0
-    normalization: Optional[str] = None
-    activation: Optional[str] = None
-    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):
@@ -29,7 +28,7 @@ class EmbeddingLayerConfig(BaseModel):
             raise ValueError("padding_idx must be a non-negative integer less than num_embeddings")
         return self
     
-class PatchEmbeddingLayerConfig(BaseModel):
+class PatchEmbeddingLayerConfig(BaseCoreConfig):
     """Configuration for a patch embedding layer.
     
     Args:
@@ -43,9 +42,6 @@ class PatchEmbeddingLayerConfig(BaseModel):
     embedding_dim: int
     patch_size: int
     in_channels: int = 3
-    normalization: Optional[str] = None
-    activation: Optional[str] = None
-    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):

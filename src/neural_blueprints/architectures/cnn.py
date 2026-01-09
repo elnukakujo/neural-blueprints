@@ -30,10 +30,6 @@ class CNN(nn.Module):
 
         self.network = nn.Sequential(*self.layers)
 
-    def blueprint(self) -> CNNConfig:
-        print(self.network)
-        return self.config
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the CNN.
 

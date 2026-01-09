@@ -61,42 +61,30 @@ class BERT(EncoderArchitecture):
         super().__init__()
         self.config = config
 
-        input_cardinalities = config.input_cardinalities
-        output_cardinalities = config.output_cardinalities
+        self.input_dim = config.input_dim
+        self.output_dim = config.output_dim
 
-        self.input_dim = [len(input_cardinalities)]
-        self.output_dim = [len(output_cardinalities)]
-
-        latent_dim = config.latent_dim
+        assert self.input_dim[-1] == self.output_dim[-1], "Input and output dimensions must match for the last feature."
+        
         encoder_layers = config.encoder_layers
         dropout_p = config.dropout_p
         normalization = config.normalization
         activation = config.activation
-        final_activation = config.final_activation
 
         # ---- Projections for discrete and continuous features ----
-        if self.config.input_projection is not None:
+        if config.input_projection is not None:            
             self.input_projection = get_input_projection(
                 projection_config=config.input_projection,
             )
+            latent_dim = config.input_projection.latent_dim
         else:
             self.input_projection = None
-
-        self.input_projection = TabularInputProjection(
-            config=TabularInputProjectionConfig(
-                cardinalities=input_cardinalities,
-                hidden_dims=[latent_dim*8, latent_dim*4, latent_dim*2],
-                output_dim=[len(input_cardinalities), latent_dim],
-                dropout_p=dropout_p,
-                normalization=normalization,
-                activation=activation
-            )
-        )
+            latent_dim = self.input_dim[-1]
 
         # Positional embeddings
         self.position_embedding = PositionEmbedding(
             config=PositionEmbeddingConfig(
-                num_positions=len(input_cardinalities),
+                num_positions=self.input_dim[0],
                 latent_dim=latent_dim,
                 normalization=normalization,
                 activation=activation,
@@ -160,13 +148,6 @@ class BERT(EncoderArchitecture):
         else:
             x_embed = x
             nan_mask = None
-            
-            # If no input projection, ensure x_embed is 3D for positional embedding and encoder
-            if x_embed.dim() == 2:
-                # Add feature dimension (assume input is (B, F) -> (B, F, 1))
-                x_embed = x_embed.unsqueeze(-1)
-            elif x_embed.dim() != 3:
-                raise ValueError(f"Input tensor must be 2D or 3D, got shape {x_embed.shape}")
 
         # ---- Add positional embeddings ----
         x_embed = x_embed + self.position_embedding(x)  # shape: (B, num_features, hidden_dim)
@@ -174,5 +155,8 @@ class BERT(EncoderArchitecture):
         # ---- Transformer encoder ----
         x_embed = self.encoder(x_embed, attn_mask = nan_mask)  # shape: (B, num_features, hidden_dim)
 
-        # ---- Output projections for each feature ----
-        return self.output_projection(x_embed)
+        if self.output_projection is not None:
+            # ---- Output projections for each feature ----
+            return self.output_projection(x_embed)
+        else:
+            return x_embed

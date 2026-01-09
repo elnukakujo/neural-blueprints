@@ -1,5 +1,5 @@
-from .encoder import EncoderConfig
+from .base import BaseCompositeConfig
 
-class DiscriminatorConfig(EncoderConfig):
+class DiscriminatorConfig(BaseCompositeConfig):
     """Configuration for a discriminator model."""
     pass

@@ -15,7 +15,7 @@ class DiscreteProjection(BaseInputProjection):
             self,
             cardinality: int,
             output_dim: int,
-            hidden_dims: list[int] = [],
+            hidden_dims: list[int] = None,
             activation: str = None,
             normalization: str = None,
             dropout_p: float = 0.0
@@ -24,11 +24,15 @@ class DiscreteProjection(BaseInputProjection):
             from ....composite import FeedForwardNetwork
             from ....core import EmbeddingLayer
             super().__init__()
-            self.input_dim = [cardinality]
-            self.output_dim = [output_dim]
+            self.input_dim = cardinality
+            self.output_dim = output_dim
 
             # Determine dimensions for embedding layer
-            embedding_dim = hidden_dims[0] if hidden_dims else output_dim
+            if hidden_dims and len(hidden_dims) > 0:
+                embedding_dim = hidden_dims[0]
+                hidden_dims = hidden_dims[1:]
+            else:
+                embedding_dim = output_dim
 
             # Create embedding layer
             layers = [
@@ -44,7 +48,7 @@ class DiscreteProjection(BaseInputProjection):
             ]
 
             # Add hidden layers if specified
-            if hidden_dims:
+            if hidden_dims and len(hidden_dims) > 0:
                 layers.append(
                     FeedForwardNetwork(
                         config=FeedForwardNetworkConfig(
@@ -96,7 +100,6 @@ class NumericalProjection(BaseInputProjection):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the input projection module.
         """
-        x = x.unsqueeze(1)                      # shape (batch_size, 1)
         emb = self.projection(x)                # shape (batch_size, output_dim)
         is_masked = (x == -1).squeeze(1)        # shape (batch_size)
         return emb, is_masked
@@ -114,16 +117,17 @@ class TabularInputProjection(BaseInputProjection):
                 ):
         super().__init__()
         self.input_dim = [len(config.cardinalities)]
-        self.output_dim = config.output_dim
+        self.output_dim = [self.input_dim[0], config.latent_dim]
 
         self.cardinalities = config.cardinalities
         hidden_dims = config.hidden_dims
-        latent_dim = config.output_dim[-1] if len(config.output_dim) > 1 else config.output_dim[-1]/len(config.cardinalities)
+        latent_dim = config.latent_dim
         dropout_p = config.dropout_p
         normalization = config.normalization
         activation = config.activation
 
         self.input_projections = nn.ModuleList([])
+
         for cardinality in self.cardinalities:
             if cardinality>1:   # Discrete Scenario
                 # Add to input projections (wrap in Sequential if multiple layers, otherwise just the embedding)

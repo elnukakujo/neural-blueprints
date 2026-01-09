@@ -3,6 +3,23 @@ from torch.utils.data import Dataset
 from typing import TypedDict, Optional
 from abc import ABC, abstractmethod
 
+class Modalities(TypedDict, total=False):
+    """
+    Type definition for different data modalities in a multimodal dataset.
+    
+    Optional modalities:
+        - tabular (Optional[torch.Tensor | dict[str, torch.Tensor]]): Tabular/structured data
+        - image (Optional[torch.Tensor | dict[str, torch.Tensor]]): Image data
+        - representation (Optional[torch.Tensor | dict[str, torch.Tensor]]): Pre-computed embeddings/representations
+        - audio (Optional[torch.Tensor | dict[str, torch.Tensor]]): Audio data
+        - text (Optional[torch.Tensor | dict[str, torch.Tensor]]): Text data
+    """
+    tabular: Optional[torch.Tensor | dict[str, torch.Tensor]]
+    image: Optional[torch.Tensor | dict[str, torch.Tensor]]
+    representation: Optional[torch.Tensor | dict[str, torch.Tensor]]
+    audio: Optional[torch.Tensor | dict[str, torch.Tensor]]
+    text: Optional[torch.Tensor | dict[str, torch.Tensor]]
+
 class Sample(TypedDict, total=False):
     """
     Type definition for dataset batches.
@@ -18,39 +35,33 @@ class UniModalSample(Sample):
     Type definition for unimodal dataset samples.
     
     Required:
-        - data: The main data tensor
+        - input: The single input tensor
     
     Optional (inherited from Sample):
         - label: Labels (can be single tensor or dict)
         - metadata: Additional metadata tensors
     """
-    data: torch.Tensor
+    inputs: torch.Tensor
 
 class MultiModalSample(Sample):
     """
     Type definition for multimodal dataset samples.
-    
-    At least one modality should be present (tabular, image, representation, audio, text).
-    
-    Optional modalities:
-        - tabular: Tabular/structured data
-        - image: Image data
-        - representation: Pre-computed embeddings/representations
-        - audio: Audio data
-        - text: Text data
+
+    Required:
+        - input (Modalities): A dict containing tensors for at least one modality.
+            - tabular (Optional[torch.Tensor | dict[str, torch.Tensor]]): Tabular/structured data
+            - image (Optional[torch.Tensor | dict[str, torch.Tensor]]): Image data
+            - representation (Optional[torch.Tensor | dict[str, torch.Tensor]]): Pre-computed embeddings/representations
+            - audio (Optional[torch.Tensor | dict[str, torch.Tensor]]): Audio data
+            - text (Optional[torch.Tensor | dict[str, torch.Tensor]]): Text data
     
     Optional (inherited from Sample):
-        - label: Labels
-        - metadata: Additional metadata
+        - label: The labels associated with the data (can be single tensor or dict)
+        - metadata: Additional metadata for the sample like masks for each modality
     """
-
-    # The different modalities
-    tabular: Optional[torch.Tensor | dict[str, torch.Tensor]]
-    image: Optional[torch.Tensor | dict[str, torch.Tensor]]
-    representation: Optional[torch.Tensor | dict[str, torch.Tensor]]
-    audio: Optional[torch.Tensor | dict[str, torch.Tensor]]
-    text: Optional[torch.Tensor | dict[str, torch.Tensor]]
-
+    inputs: Modalities
+    
+    
 class BaseDataset(Dataset, ABC):
     """
     Abstract base class for all datasets.

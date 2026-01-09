@@ -39,6 +39,14 @@ class TabularPreprocessor:
         NAN_TOKEN = "<NAN>"
 
         for col in discrete_features:
+            nan_values = (
+                original_df[col].isna() |
+                (original_df[col] == "nan") |
+                (original_df[col] == "")
+            ).sum()
+            if nan_values > 0:
+                logger.info(f"Discrete column '{col}' has {nan_values}/{(nan_values/original_df.shape[0])*100:.2f}% NaN values; these will be encoded as 0.")
+
             column_data = original_df[col].astype(str).replace({"nan": NAN_TOKEN, "": NAN_TOKEN})
             unique_vals = column_data.unique().tolist()
 
@@ -86,6 +94,11 @@ class TabularPreprocessor:
         for col in continuous_features:
             scaler = MinMaxScaler()
             original_df[[col]] = scaler.fit_transform(original_df[[col]])
+
+            nan_values = original_df[col].isna().sum()
+            if nan_values > 0:
+                logger.info(f"Continuous column '{col}' has {nan_values}/{(nan_values/original_df.shape[0])*100:.2f}% NaN values; these will be replaced with -1 after scaling.")
+
             original_df[col] = original_df[col].replace(np.nan, -1)  # Use -1 for NaNs
             original_df[col] = original_df[col].astype('float32')
 

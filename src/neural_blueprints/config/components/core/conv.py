@@ -1,22 +1,9 @@
 from typing import Optional
 from pydantic import BaseModel, model_validator
 
-class ConvLayerConfig(BaseModel):
-    """Configuration for a convolutional layer.
-    
-    Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        kernel_size (int): Size of the convolutional kernel.
-        stride (int): Stride of the convolution.
-        padding (int | None): Padding added to both sides of the input. If None, uses "same" padding.
-        dilation (int): Spacing between kernel elements.
-        groups (int): Number of blocked connections from input channels to output channels.
-        bias (bool): If True, adds a learnable bias to the output.
-        activation (Optional[str]): Activation function to use. Options: 'relu', 'leakyrelu', 'elu', 'silu', 'gelu', 'sigmoid', 'tanh'. If None, no activation is applied.
-        dropout_p (Optional[float]): Dropout probability. If None, no dropout is applied.
-        dim (int): Dimensionality of the convolution (1D, 2D, or 3D).
-    """
+from .base import BaseCoreConfig
+
+class ConvLayerConfig(BaseCoreConfig):
     in_channels: int
     out_channels: int
     kernel_size: int
@@ -27,8 +14,6 @@ class ConvLayerConfig(BaseModel):
     groups: int = 1
     bias: bool = True
     dim: int = 1 # 1 for Conv1D, 2 for Conv2D, 3 for Conv3D
-    activation: Optional[str] = None
-    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):

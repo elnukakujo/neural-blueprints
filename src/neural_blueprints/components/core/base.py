@@ -1,4 +1,5 @@
 import torch.nn as nn
+from typing import List, Tuple
 
 class BaseCore(nn.Module):
     """Base class for core components made up of multiple sub-components.
@@ -6,8 +7,8 @@ class BaseCore(nn.Module):
     This class provides a template for building core components that consist of multiple
     sub-components.
     """
-    input_dim: list[int]
-    output_dim: list[int]
+    input_dim: List[int]
+    output_dim: List[int] | Tuple[List[int], ...]
 
     def forward(self):
         raise NotImplementedError("Subclasses must implement the blueprint method.")

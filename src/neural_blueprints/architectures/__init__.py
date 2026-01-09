@@ -1,11 +1,10 @@
 """Init file for Machine Learning Models modules."""
-from .base import BaseArchitecture, EncoderArchitecture, DecoderArchitecture, EncoderDecoderArchitecture
 from .mlp import MLP
 from .cnn import CNN
 from .rnn import RNN
 from .autoencoder import AutoEncoder, VariationalAutoEncoder
 from .gan import GAN
-from .transformer import Transformer, TabularBERT
+from .transformer import Transformer, BERT
 
 __all__ = [
     MLP,
@@ -15,5 +14,5 @@ __all__ = [
     VariationalAutoEncoder,
     GAN,
     Transformer,
-    TabularBERT
+    BERT
 ]

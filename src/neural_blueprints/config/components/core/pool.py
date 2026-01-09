@@ -1,7 +1,9 @@
 from typing import Optional
 from pydantic import BaseModel, model_validator
 
-class PoolingLayerConfig(BaseModel):
+from .base import BaseCoreConfig
+
+class PoolingLayerConfig(BaseCoreConfig):
     """Configuration for a pooling layer.
     
     Args:
@@ -15,9 +17,6 @@ class PoolingLayerConfig(BaseModel):
     pool_type: str
     kernel_size: int
     stride: int
-    normalization: Optional[str] = None
-    activation: Optional[str] = None
-    dropout_p: Optional[float] = None
 
     @model_validator(mode='after')
     def _validate(self):

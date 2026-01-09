@@ -44,7 +44,7 @@ class TabularDataset(BaseDataset):
     def __getitem__(self, idx):
         row = self.data[idx]
         return {
-            "data": row
+            "inputs": row
         }
     
 class MaskedTabularDataset(TabularDataset):
@@ -102,9 +102,9 @@ class MaskedTabularDataset(TabularDataset):
         mask = self.mask[idx]
         
         return {
-            "data": row,
+            "inputs": row,
             "label": labels,
-            "mask": mask
+            "metadata": {"mask": mask}
         }
     
 class FeatureTabularDataset(TabularDataset):
@@ -153,8 +153,10 @@ class FeatureTabularDataset(TabularDataset):
             representation_data = self.representations[idx]
 
         return {
-            "tabular": tabular_data,
-            "representation": representation_data
+            "inputs": {
+                "tabular": tabular_data,
+                "representation": representation_data
+            }
         }
     
 class TabularLabelDataset(TabularDataset):
@@ -185,7 +187,7 @@ class TabularLabelDataset(TabularDataset):
         else:
             label = self.labels[idx]
         return {
-            "data": row,
+            "inputs": row,
             "label": label
         }
 
@@ -216,7 +218,9 @@ class FeatureTabularLabelDataset(FeatureTabularDataset, TabularLabelDataset):
             label = self.labels[idx]
 
         return {
-            "tabular": tabular_data,
-            "representation": representation_data,
+            "inputs": {
+                "tabular": tabular_data,
+                "representation": representation_data
+            },
             "label": label
         }

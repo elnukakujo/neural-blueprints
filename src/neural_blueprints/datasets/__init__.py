@@ -1,18 +1,16 @@
 """Init file for Dataset modules."""
 from .tabular import (
     TabularDataset,
-    TabularSingleLabelDataset,
     MaskedTabularDataset,
-    FeatureTabularSingleLabelDataset,
+    TabularLabelDataset,
     FeatureTabularDataset,
-    FeatureMaskedTabularDataset,
+    FeatureTabularLabelDataset
     )
 
 __all__ = [
     TabularDataset,
-    TabularSingleLabelDataset,
     MaskedTabularDataset,
-    FeatureTabularSingleLabelDataset,
+    TabularLabelDataset,
     FeatureTabularDataset,
-    FeatureMaskedTabularDataset,
+    FeatureTabularLabelDataset
 ]

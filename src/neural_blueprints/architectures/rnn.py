@@ -23,10 +23,6 @@ class RNN(nn.Module):
             nn.Linear(config.rnn_unit_config.hidden_dim, config.output_dim),
             get_activation(config.final_activation)
         )
-
-    def blueprint(self) -> RNNConfig:
-        print(self)
-        return self.config
     
     def forward(self, x: torch.Tensor, hidden: torch.Tensor = None) -> torch.Tensor:
         """Forward pass through the RNN.

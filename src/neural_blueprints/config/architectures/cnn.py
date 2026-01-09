@@ -1,7 +1,8 @@
 from typing import List, Optional
 from pydantic import BaseModel, model_validator
 
-class CNNConfig(BaseModel):
+from .base import BaseArchitectureConfig
+class CNNConfig(BaseArchitectureConfig):
     """Configuration for a Convolutional Neural Network (CNN) architecture.
     
     Args:

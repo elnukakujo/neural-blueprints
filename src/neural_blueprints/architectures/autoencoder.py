@@ -1,14 +1,14 @@
 import torch
 import torch.nn as nn
 
-from .base import EncoderDecoderArchitecture
+from .base import AutoencoderArchitecture
 from ..components.composite import Encoder, Decoder
 from ..config.architectures import AutoEncoderConfig
 
 import logging
 logger = logging.getLogger(__name__)
 
-class AutoEncoder(EncoderDecoderArchitecture):
+class AutoEncoder(AutoencoderArchitecture):
     """A simple AutoEncoder architecture composed of an encoder and a decoder.
     
     Args:
