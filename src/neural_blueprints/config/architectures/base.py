@@ -1,7 +1,13 @@
 from pydantic import BaseModel, model_validator
-from typing import Optional, List
+from typing import Optional
 from abc import ABC
 
+from ...types import (
+    UniModalInputSpec,
+    MultiModalInputSpec,
+    SingleOutputSpec,
+    MultiOutputSpec,
+)
 from ..components.composite.projections.input.base import BaseProjectionInputConfig
 from ..components.composite.projections.output.base import BaseProjectionOutputConfig
 
@@ -19,8 +25,8 @@ class BaseArchitectureConfig(BaseModel, ABC):
         - final_activation (Optional[str]): Final activation function to apply to the output.
     """
     
-    input_dim: List[int]
-    output_dim: Optional[List[int]] = None
+    input_spec: UniModalInputSpec | MultiModalInputSpec
+    output_spec: SingleOutputSpec | MultiOutputSpec
     input_projection: Optional[BaseProjectionInputConfig] = None
     output_projection: Optional[BaseProjectionOutputConfig] = None
     dropout_p: Optional[float] = None

@@ -1,13 +1,13 @@
 import torch
 
-from .base import BaseOutputProjection
+from .base import BaseInputProjection
 from .....config.components.composite import FeedForwardNetworkConfig
-from .....config.components.composite.projections.output import LinearOutputProjectionConfig
+from .....config.components.composite.projections.input import LinearInputProjectionConfig
 
 import logging
 logger = logging.getLogger(__name__)
 
-class LinearOutputProjection(BaseOutputProjection):
+class LinearInputProjection(BaseInputProjection):
     """
     Linear output projection.
 
@@ -16,12 +16,12 @@ class LinearOutputProjection(BaseOutputProjection):
     """
     def __init__(
             self,
-            config: LinearOutputProjectionConfig
+            config: LinearInputProjectionConfig
         ):
         super().__init__()
         from ... import FeedForwardNetwork
         self.input_dim = config.input_dim
-        self.output_dim = config.output_dim
+        self.output_dim = [config.latent_dim]
         
         hidden_dims = config.hidden_dims
         activation = config.activation
@@ -44,12 +44,12 @@ class LinearOutputProjection(BaseOutputProjection):
         Forward pass through the output projection.
 
         Args:
-            x (torch.Tensor): Input tensor of shape (batch_size, ...).
+            x (torch.Tensor): Input tensor of shape (batch_size, *input_dim).
 
         Returns:
-            List of tensors, each of shape (batch_size, cardinality_i) for each attribute.
+            List[torch.Tensor]: List containing the output tensor of shape (batch_size, latent_dim).
         """
-        if len(x.size()) > 2:
-            x = torch.flatten(x, start_dim=1) # shape: (batch_size, input_dim)
+
+        x = torch.flatten(x, start_dim=1) # flatten the tensor
 
         return self.projection(x)  # shape: (batch_size, output_dim)

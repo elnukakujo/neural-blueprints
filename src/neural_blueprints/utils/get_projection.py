@@ -13,6 +13,12 @@ def get_input_projection(projection_config: object) -> BaseInputProjection:
     if projection_config.__class__.__name__ == "TabularInputProjectionConfig":
         from ..components.composite.projections.input.tabular import TabularInputProjection
         return TabularInputProjection(config=projection_config)
+    elif projection_config.__class__.__name__ == "LinearInputProjectionConfig":
+        from ..components.composite.projections.input.linear import LinearInputProjection
+        return LinearInputProjection(config=projection_config)
+    elif projection_config.__class__.__name__ == "MultiModalInputProjectionConfig":
+        from ..components.composite.projections.input.multimodal import MultiModalInputProjection
+        return MultiModalInputProjection(config=projection_config)
     else:
         raise ValueError(f"Unsupported input projection type: {projection_config.__class__.__name__}")
 

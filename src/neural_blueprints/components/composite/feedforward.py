@@ -1,11 +1,12 @@
 import torch
 from torch import nn
 
+from .base import BaseComposite
 from ..core import DenseLayer
 from ...config.components.composite import FeedForwardNetworkConfig
 from ...config.components.core import DenseLayerConfig
 
-class FeedForwardNetwork(nn.Module):
+class FeedForwardNetwork(BaseComposite):
     """A feedforward neural network composed of multiple dense layers.
 
     Args:
@@ -26,8 +27,8 @@ class FeedForwardNetwork(nn.Module):
         in_dim = input_dim
         
         for hidden_dim in hidden_dims:
-            layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=hidden_dim, normalization=normalization, activation=activation, dropout_p=dropout_p)))
-            in_dim = hidden_dim
+            layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=[hidden_dim], normalization=normalization, activation=activation, dropout_p=dropout_p)))
+            in_dim = [hidden_dim]
             
         layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=output_dim, normalization=None, activation=final_activation)))
         

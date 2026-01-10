@@ -61,10 +61,8 @@ class BERT(EncoderArchitecture):
         super().__init__()
         self.config = config
 
-        self.input_dim = config.input_dim
-        self.output_dim = config.output_dim
-
-        assert self.input_dim[-1] == self.output_dim[-1], "Input and output dimensions must match for the last feature."
+        self.input_spec = config.input_spec
+        self.output_spec = config.output_spec
         
         encoder_layers = config.encoder_layers
         dropout_p = config.dropout_p

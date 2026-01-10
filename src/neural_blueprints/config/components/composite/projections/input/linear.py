@@ -1,10 +1,10 @@
-from pydantic import model_validator
 from typing import List
+from pydantic import model_validator
 
 from .base import BaseProjectionInputConfig
 
-class TabularInputProjectionConfig(BaseProjectionInputConfig):
-    cardinalities: List[int]
+class LinearInputProjectionConfig(BaseProjectionInputConfig):
+    input_dim: List[int]
 
     @model_validator(mode='after')
     def _validate(self):

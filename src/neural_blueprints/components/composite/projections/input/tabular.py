@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 class DiscreteProjection(BaseInputProjection):
     def __init__(
             self,
-            cardinality: int,
-            output_dim: int,
+            cardinality: list[int],
+            output_dim: list[int],
             hidden_dims: list[int] = None,
             activation: str = None,
             normalization: str = None,
@@ -30,7 +30,6 @@ class DiscreteProjection(BaseInputProjection):
             # Determine dimensions for embedding layer
             if hidden_dims and len(hidden_dims) > 0:
                 embedding_dim = hidden_dims[0]
-                hidden_dims = hidden_dims[1:]
             else:
                 embedding_dim = output_dim
 
@@ -38,7 +37,7 @@ class DiscreteProjection(BaseInputProjection):
             layers = [
                 EmbeddingLayer(
                     config=EmbeddingLayerConfig(
-                        num_embeddings=cardinality + 1,  # +1 for padding index
+                        num_embeddings=cardinality[0] + 1,  # +1 for padding index
                         embedding_dim=embedding_dim,
                         normalization=normalization,
                         activation=activation,
@@ -52,7 +51,7 @@ class DiscreteProjection(BaseInputProjection):
                 layers.append(
                     FeedForwardNetwork(
                         config=FeedForwardNetworkConfig(
-                            input_dim=embedding_dim,
+                            input_dim=[embedding_dim],
                             hidden_dims=hidden_dims,
                             output_dim=output_dim,
                             normalization=normalization,
@@ -74,7 +73,7 @@ class DiscreteProjection(BaseInputProjection):
 class NumericalProjection(BaseInputProjection):
     def __init__(
             self,
-            output_dim: int,
+            output_dim: list[int],
             hidden_dims: list[int] = [],
             activation: str = None,
             normalization: str = None,
@@ -83,11 +82,11 @@ class NumericalProjection(BaseInputProjection):
             from ... import FeedForwardNetwork
             super().__init__()
             self.input_dim = [1]
-            self.output_dim = [output_dim]
+            self.output_dim = output_dim
 
             self.projection = FeedForwardNetwork(
                 config=FeedForwardNetworkConfig(
-                    input_dim=1,
+                    input_dim=self.input_dim,
                     hidden_dims=hidden_dims,
                     output_dim=output_dim,
                     normalization=normalization,
@@ -133,8 +132,8 @@ class TabularInputProjection(BaseInputProjection):
                 # Add to input projections (wrap in Sequential if multiple layers, otherwise just the embedding)
                 self.input_projections.append(
                     DiscreteProjection(
-                        cardinality=cardinality,
-                        output_dim=latent_dim,
+                        cardinality=[cardinality],
+                        output_dim=[latent_dim],
                         hidden_dims=hidden_dims,
                         normalization=normalization,
                         activation=activation,
@@ -144,7 +143,7 @@ class TabularInputProjection(BaseInputProjection):
             else:               # Continuous Scenario
                 self.input_projections.append(
                     NumericalProjection(
-                        output_dim=latent_dim,
+                        output_dim=[latent_dim],
                         hidden_dims=hidden_dims,
                         normalization=normalization,
                         activation=activation,
