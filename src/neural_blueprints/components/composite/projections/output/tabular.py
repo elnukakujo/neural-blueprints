@@ -42,8 +42,8 @@ class TabularOutputProjection(BaseOutputProjection):
                 self.output_projections.append(
                     DenseLayer(
                         config=DenseLayerConfig(
-                            input_dim=latent_dim,
-                            output_dim=cardinality + 1 if cardinality > 1 else cardinality,
+                            input_dim=[latent_dim],
+                            output_dim=[cardinality + 1] if cardinality > 1 else [cardinality],
                             normalization=None,
                             activation="sigmoid",
                             dropout_p=0,
@@ -54,9 +54,9 @@ class TabularOutputProjection(BaseOutputProjection):
                 self.output_projections.append(
                     FeedForwardNetwork(
                         config=FeedForwardNetworkConfig(
-                            input_dim=latent_dim,
+                            input_dim=[latent_dim],
                             hidden_dims=hidden_dims,
-                            output_dim=cardinality + 1 if cardinality > 1 else cardinality,
+                            output_dim=[cardinality + 1] if cardinality > 1 else [cardinality],
                             normalization=normalization,
                             activation=activation,
                             dropout_p=dropout_p,

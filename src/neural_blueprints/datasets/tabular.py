@@ -117,8 +117,10 @@ class FeatureTabularDataset(TabularDataset):
         columns = data.columns.tolist()
         self.representations = {}
 
+        columns_encoded = []
         for column_to_encode, representation_model in column_encoders.items():
             cols = column_to_encode.split(",") if "," in column_to_encode else [column_to_encode]
+            columns_encoded.extend(cols)
             key = column_to_encode
 
             # Get data for specified columns
@@ -137,12 +139,11 @@ class FeatureTabularDataset(TabularDataset):
             self.representations: torch.Tensor = list(self.representations.values())[0]
 
         # Handle classic tabular data (not encoded)
-        columns_not_encoded = [col for col in columns if col not in column_encoders]
+        columns_not_encoded = [col for col in columns if col not in columns_encoded]
         if len(columns_not_encoded) == 0:
             data = pd.DataFrame()
         else:
             data = data.iloc[:, [columns.index(col) for col in columns_not_encoded]]
-
             TabularDataset.__init__(self, data, device=device)
     
     def __getitem__(self, idx):

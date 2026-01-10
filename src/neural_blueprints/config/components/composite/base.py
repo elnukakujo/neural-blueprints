@@ -7,13 +7,15 @@ class BaseCompositeConfig(BaseModel, ABC):
 
     Args:
         - input_dim (List[int]): Dimensions of the input features.
+        - hidden_dims (Optional[List[int]]): Dimensions of the hidden features.
         - output_dim (Optional[List[int]]): Dimensions of the output features. If None, uses input_dim.
         - dropout_p (Optional[float]): Dropout probability to apply in projections if not already set.
         - normalization (Optional[str]): Normalization type to apply in projections if not already set.
         - activation (Optional[str]): Activation function to apply in projections if not already set.
         - final_activation (Optional[str]): Final activation function to apply to the output.
     """
-    input_dim: List[int]
+    input_dim: Optional[List[int]] = None
+    hidden_dims: Optional[List[int]] = None
     output_dim: Optional[List[int]] = None
     dropout_p: Optional[float] = None
     normalization: Optional[str] = None

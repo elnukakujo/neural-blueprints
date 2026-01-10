@@ -23,18 +23,7 @@ class EncoderConfig(BaseCompositeConfig):
         return self
     
 class TransformerEncoderConfig(BaseCompositeConfig):
-    """Configuration for a Transformer encoder.
-
-    Args:
-        input_dim (int): Size of the input features.
-        hidden_dim (int): Size of the hidden layer.
-        num_layers (int): Number of layers.
-        num_heads (int): Number of attention heads.
-        normalization (str | None): Configuration for normalization layer. If None, no normalization is applied.
-        activation (str | None): Activation function to use. If None, no activation is applied.
-        dropout_p (float | None): Dropout probability. If None, no dropout is applied.
-        final_activation (Optional[str]): Optional final activation function.
-    """
+    dim_feedforward: int
     num_layers: int
     num_heads: int
 

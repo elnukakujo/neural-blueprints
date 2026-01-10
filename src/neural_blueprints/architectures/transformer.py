@@ -84,8 +84,8 @@ class BERT(EncoderArchitecture):
         # Positional embeddings
         self.position_embedding = PositionEmbedding(
             config=PositionEmbeddingConfig(
-                num_positions=self.input_dim[0],
-                latent_dim=latent_dim,
+                input_dim=self.input_dim,
+                output_dim=[self.input_dim[0], latent_dim],
                 normalization=normalization,
                 activation=activation,
                 dropout_p=dropout_p
@@ -95,8 +95,8 @@ class BERT(EncoderArchitecture):
         # ---- Transformer Encoder ----
         self.encoder = TransformerEncoder(
             config=TransformerEncoderConfig(
-                input_dim=latent_dim,
-                hidden_dim=latent_dim,
+                input_dim=[self.input_dim[0], latent_dim],
+                dim_feedforward=latent_dim * 4,
                 num_layers=encoder_layers,
                 num_heads=8,
                 dropout_p=dropout_p,

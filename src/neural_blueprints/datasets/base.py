@@ -91,3 +91,27 @@ class BaseDataset(Dataset, ABC):
             Either a UniModalSample or MultiModalSample dict
         """
         raise NotImplementedError("Subclasses must implement __getitem__ method.")
+    
+    def random_split(self, lengths: list[float] | list[int]) -> list['BaseDataset']:
+        """
+        Split the dataset into non-overlapping new datasets of given lengths.
+        
+        Args:
+            lengths (list[float] | list[int]): If floats, they represent proportions summing to 1.0.
+                                               If ints, they represent absolute sizes.
+
+        Returns:
+            List of BaseDataset instances representing the splits.
+        """
+        total_length = len(self)
+        if all(isinstance(length, float) for length in lengths):
+            assert abs(sum(lengths) - 1.0) < 1e-6, "Proportions must sum to 1.0"
+            lengths = [int(length * total_length) for length in lengths]
+            # Adjust last length to account for rounding errors
+            lengths[-1] = total_length - sum(lengths[:-1])
+        elif all(isinstance(length, int) for length in lengths):
+            assert sum(lengths) == total_length, "Sum of lengths must equal dataset size"
+        else:
+            raise ValueError("Lengths must be all floats or all integers.")
+        
+        return torch.utils.data.random_split(self, lengths)

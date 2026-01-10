@@ -21,8 +21,8 @@ class PositionEmbedding(BaseComposite):
                 ):
         super().__init__()
         
-        self.input_dim = [config.num_positions]
-        self.output_dim = [config.num_positions, config.latent_dim]
+        self.input_dim = config.input_dim
+        self.output_dim = config.output_dim
 
         normalization = config.normalization
         activation = config.activation

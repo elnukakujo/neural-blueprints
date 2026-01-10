@@ -16,19 +16,21 @@ class BaseArchitecture(nn.Module):
     input_dim: List[int] | Tuple[int, ...]
     output_dim: List[int] | Tuple[List[int], ...]
 
-    def blueprint(self, batch_size: Optional[int] = 64) -> None:
+    def blueprint(self, batch_size: Optional[int] = 64, with_graph: bool = True) -> None:
         """
         Print a summary of the model architecture.
         
         Args:
             batch_size (Optional[int]): The batch size to use for the summary. Default is 64.
+            with_graph (bool): Whether to generate and display the model graph. Default is True.
         """
         assert hasattr(self, 'input_dim'), "Subclasses must define 'input_dim' attribute."
         input_size = (batch_size, *self.input_dim)
         print(summary(self, input_size=input_size))
-
-        dummy_input = torch.rand(*input_size)
-        trace_model(self, inputs=dummy_input)
+        
+        if with_graph:
+            dummy_input = torch.rand(*input_size)
+            trace_model(self, inputs=dummy_input)
     
     def show_weights(
         self

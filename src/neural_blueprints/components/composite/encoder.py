@@ -68,7 +68,7 @@ class TransformerEncoder(BaseComposite):
         self.input_dim = config.input_dim
         self.output_dim = config.input_dim
 
-        hidden_dim = config.hidden_dim
+        dim_feedforward = config.dim_feedforward        
         num_layers = config.num_layers
         num_heads = config.num_heads
         activation = config.activation
@@ -81,9 +81,9 @@ class TransformerEncoder(BaseComposite):
         for _ in range(num_layers):
             self.layers.append(
                 nn.TransformerEncoderLayer(
-                    d_model=hidden_dim,
+                    d_model=self.input_dim[-1],
                     nhead=num_heads,
-                    dim_feedforward=hidden_dim,
+                    dim_feedforward=dim_feedforward,
                     dropout=dropout_p,
                     batch_first=True,
                     activation=activation

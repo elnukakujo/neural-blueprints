@@ -3,11 +3,12 @@ import torch.nn as nn
 
 from ...config.components.core import DenseLayerConfig, NormalizationLayerConfig, DropoutLayerConfig
 from ...utils import get_activation
+from .base import BaseCore
 
 import logging
 logger = logging.getLogger(__name__)
 
-class DenseLayer(nn.Module):
+class DenseLayer(BaseCore):
     """A fully connected dense layer with optional activation.
     
     Args:
@@ -16,12 +17,18 @@ class DenseLayer(nn.Module):
     def __init__(self, config: DenseLayerConfig):
         super(DenseLayer, self).__init__()
         from ..core import NormalizationLayer, DropoutLayer
+
+        self.input_dim = config.input_dim
+        self.output_dim = config.output_dim
+
+        assert len(self.input_dim) == 1, "DenseLayer only supports 1D input dimensions."
+        assert len(self.output_dim) == 1, "DenseLayer only supports 1D output dimensions."
         
-        linear_layer = nn.Linear(config.input_dim, config.output_dim)
+        linear_layer = nn.Linear(config.input_dim[0], config.output_dim[0])
         normalization_layer = NormalizationLayer(
             config=NormalizationLayerConfig(
                 norm_type=config.normalization,
-                num_features=config.output_dim
+                num_features=config.output_dim[0]
             )
         )
         activation_layer = get_activation(config.activation)

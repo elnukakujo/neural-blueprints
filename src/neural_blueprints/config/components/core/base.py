@@ -13,7 +13,7 @@ class BaseCoreConfig(BaseModel, ABC):
         - activation (Optional[str]): Activation function to apply in projections if not already set.
         - final_activation (Optional[str]): Final activation function to apply to the output.
     """
-    input_dim: List[int]
+    input_dim: Optional[List[int]] = None
     output_dim: Optional[List[int]] = None
     dropout_p: Optional[float] = None
     normalization: Optional[str] = None
