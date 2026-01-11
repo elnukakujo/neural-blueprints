@@ -21,6 +21,7 @@ class LinearInputProjection(BaseInputProjection):
         super().__init__()
         from ... import FeedForwardNetwork
         self.input_dim = config.input_dim
+        assert self.input_dim.__len__() == 1, f"LinearInputProjection only supports 1D input_dim, got {self.input_dim}."
         self.output_dim = [config.latent_dim]
         
         hidden_dims = config.hidden_dims

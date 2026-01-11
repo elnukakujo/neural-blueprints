@@ -109,12 +109,6 @@ def predict_cross_entropy(
     if y is None:
         raise ValueError("Classification tasks require labels in 'label' field.")
 
-    # For multi-modal inputs, pick first modality
-    if isinstance(X, dict):
-        modality = next(iter(X.keys()))
-        X = X[modality]
-        y = y[modality] if isinstance(y, dict) else y
-
     with torch.no_grad():
         y_pred = model(X)
         if isinstance(y_pred, (tuple, list)):
@@ -122,8 +116,12 @@ def predict_cross_entropy(
 
     y_pred = y_pred.argmax(dim=1)
 
+    if np.unique(y_pred.cpu().numpy()).size == 1: 
+        logger.warning("Warning: Only one class predicted for classification task.") 
+
     # Compute accuracy
     correct = (y_pred == y).sum().item()
     acc = correct / y.size(0)
 
+    print(f"Classification Accuracy: {acc:.4f}")
     return acc

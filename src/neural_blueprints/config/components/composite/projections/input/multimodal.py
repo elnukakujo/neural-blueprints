@@ -1,7 +1,5 @@
-from typing import List, Optional
-
 from .base import BaseProjectionInputConfig
+from ......types import MultiModalInputSpec
 
 class MultiModalInputProjectionConfig(BaseProjectionInputConfig):
-    tabular_cardinalities: Optional[List[int]] = None
-    representation_input_dim: Optional[List[int]] = None
+    input_spec: MultiModalInputSpec

@@ -6,18 +6,20 @@ from .base import BaseType
 
 TensorShape: TypeAlias = Tuple[int, ...]
 
+CardinalitiesType: TypeAlias = Tuple[int, ...]
+
 SpecValue: TypeAlias = Union[
-    TensorShape,
+    TensorShape | CardinalitiesType,
     Dict[str, Any], # Should be SpecValue recursively
 ]
 
-UniModalInputSpec: TypeAlias = TensorShape
+UniModalInputSpec: TypeAlias = TensorShape | CardinalitiesType
 
-class MultiModalInputSpec(BaseType):
+class MultiModalInputSpec(BaseType, total=False):
     """
     Example:
     {
-        "tabular": (10,),
+        "tabular": (10, 4, 6),
         "representation": {
             "image": (512,),
             "text": (768,),
