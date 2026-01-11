@@ -99,7 +99,7 @@ class NumericalProjection(BaseInputProjection):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the input projection module.
         """
-        emb = self.projection(x)                # shape (batch_size, output_dim)
+        emb = self.projection(x.unsqueeze(1))                # shape (batch_size, output_dim)
         is_masked = (x == -1).squeeze(1)        # shape (batch_size)
         return emb, is_masked
 

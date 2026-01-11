@@ -1,4 +1,6 @@
+from typing import Tuple
+
 from ... import BaseComposite
 
 class BaseInputProjection(BaseComposite):
-    pass
+    output_dim: Tuple[int, ...] = None

@@ -5,7 +5,7 @@ from torchvista import trace_model
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from collections import defaultdict
-from typing import Optional, List, Tuple, Dict
+from typing import Optional, Tuple, Dict
 
 class BaseArchitecture(nn.Module):
     """Base class for neural network architectures.
@@ -18,6 +18,7 @@ class BaseArchitecture(nn.Module):
 
     def _make_dummy_from_spec(
         self,
+        spec: Tuple | Dict,
         batch_size: int
     ) -> torch.Tensor | Dict[str, torch.Tensor]:
         """
@@ -30,14 +31,13 @@ class BaseArchitecture(nn.Module):
         Returns:
             torch.Tensor | Dict[str, torch.Tensor]: A dummy tensor or dictionary of tensors.
         """
-        assert hasattr(self, 'input_spec'), "Subclasses must define 'input_spec' attribute."
+        if spec is None:
+            return None
+        if isinstance(spec, (list, tuple)):
+            return torch.rand(batch_size, *spec)
 
-        if isinstance(self.input_spec, (list, tuple)):
-            return torch.rand(batch_size, *self.input_spec)
-
-        if isinstance(self.input_spec, dict):
-            return {k: self._make_dummy_from_spec(v, batch_size) for k, v in self.input_spec.items()}
-        
+        if isinstance(spec, dict):
+            return {k: self._make_dummy_from_spec(spec=v, batch_size=batch_size) for k, v in spec.items()}
         raise ValueError("Input specification must be a tuple/list or a dictionary.")
 
     def blueprint(self, batch_size: Optional[int] = 64, with_graph: bool = True) -> None:
@@ -48,8 +48,9 @@ class BaseArchitecture(nn.Module):
             batch_size (Optional[int]): The batch size to use for the summary. Default is 64.
             with_graph (bool): Whether to generate and display the model graph. Default is True.
         """
-        dummy_input = self._make_dummy_from_spec(batch_size)
-        print(summary(self, input_data=dummy_input))
+        dummy_input = self._make_dummy_from_spec(spec = self.input_spec, batch_size=batch_size)
+
+        print(summary(self, input_data={"inputs": dummy_input}))
         
         if with_graph:
             trace_model(self, inputs=dummy_input)

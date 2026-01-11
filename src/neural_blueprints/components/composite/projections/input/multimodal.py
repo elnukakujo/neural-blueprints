@@ -52,6 +52,7 @@ class MultiModalInputProjection(BaseInputProjection):
         self.input_dim = config.tabular_cardinalities if config.tabular_cardinalities is not None else []
         self.input_dim += config.representation_input_dim if config.representation_input_dim is not None else []
         self.input_dim = tuple(self.input_dim)
+        print(self.input_dim)
         self.output_dim = [len(self.input_dim), config.latent_dim]
 
     
@@ -74,12 +75,18 @@ class MultiModalInputProjection(BaseInputProjection):
         embeddings = []
         nan_masks = []
         if self.tabular_projection is not None:
+            if isinstance(tabular_inputs, torch.Tensor):
+                tabular_inputs = {'tabular_input': tabular_inputs}
+
             for inputs in tabular_inputs.values():
                 embedding, mask = self.tabular_projection(inputs)
                 embeddings.append(embedding)  # shape: (batch_size, num_attributes, latent_dim)
                 nan_masks.append(mask)        # shape: (batch_size, num_attributes)
 
         if self.representation_projection is not None:
+            if isinstance(representation_inputs, torch.Tensor):
+                representation_inputs = {'representation_input': representation_inputs}
+            
             for inputs in representation_inputs.values():
                 inputs = torch.flatten(inputs, start_dim=1)
                 embedding = self.representation_projection(inputs)  # shape: (batch_size, num_attributes, latent_dim)

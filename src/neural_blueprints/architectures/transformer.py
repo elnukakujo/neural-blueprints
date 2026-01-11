@@ -45,15 +45,6 @@ class Transformer(nn.Module):
         return decoded
     
 class BERT(EncoderArchitecture):
-    """A BERT-style model for masked attribute inference on tabular data:
-        - Embeddings for categorical features
-        - Pass-through for continuous features
-        - TransformerEncoder
-        - Optional feedforward head for masked attribute prediction
-
-    Args:
-        config (BERTConfig): Configuration for the Tabular BERT model.
-    """
     def __init__(self,
             config: BERTConfig    
         ):
@@ -74,16 +65,21 @@ class BERT(EncoderArchitecture):
             self.input_projection = get_input_projection(
                 projection_config=config.input_projection,
             )
-            latent_dim = config.input_projection.latent_dim
-        else:
+        elif isinstance(self.input_spec, tuple) and len(self.input_spec) == 2:
             self.input_projection = None
-            latent_dim = self.input_dim[-1]
+        else:
+            raise ValueError("Input projection config must be provided for BERT when input_spec is not a 2D tensor shape.")
+
+        input_dim = self.input_projection.output_dim if self.input_projection is not None else self.input_spec
+        print(input_dim)
+
+        assert isinstance(input_dim, (tuple, list)) and len(input_dim) == 2 and isinstance(input_dim[0], int) and isinstance(input_dim[1], int), f"Input dimensions must be a tuple of two integers (num_features, latent_dim) but got: {input_dim}."
 
         # Positional embeddings
         self.position_embedding = PositionEmbedding(
             config=PositionEmbeddingConfig(
-                input_dim=self.input_dim,
-                output_dim=[self.input_dim[0], latent_dim],
+                input_dim=[input_dim[0]],
+                output_dim=input_dim,
                 normalization=normalization,
                 activation=activation,
                 dropout_p=dropout_p
@@ -93,8 +89,8 @@ class BERT(EncoderArchitecture):
         # ---- Transformer Encoder ----
         self.encoder = TransformerEncoder(
             config=TransformerEncoderConfig(
-                input_dim=[self.input_dim[0], latent_dim],
-                dim_feedforward=latent_dim * 4,
+                input_dim=input_dim,
+                dim_feedforward=input_dim[1] * 4,
                 num_layers=encoder_layers,
                 num_heads=8,
                 dropout_p=dropout_p,
@@ -111,44 +107,43 @@ class BERT(EncoderArchitecture):
             self.output_projection = None
 
 
-    def encode(self, x: torch.Tensor) -> torch.Tensor:
+    def encode(self, inputs: torch.Tensor) -> torch.Tensor:
         """Forward pass through the BERT encoder.
 
         Args:
-            x (torch.Tensor): Input tensor of shape (batch_size, seq_len).
-
+            inputs (torch.Tensor): Input tensor of shape (batch_size, seq_len).
         Returns:
             Encoded tensor of shape (batch_size, seq_len, hidden_dim).
         """
         # ---- Split categorical and continuous features ----
-        x_embed, nan_mask = self.input_projection(x)  # shape: (B, num_features, hidden_dim), (B, num_features)
+        x_embed, nan_mask = self.input_projection(inputs)  # shape: (B, num_features, hidden_dim), (B, num_features)
 
         # ---- Add positional embeddings ----
-        x_embed = x_embed + self.position_embedding(x)  # shape: (B, num_features, hidden_dim)
+        x_embed = x_embed + self.position_embedding(inputs)  # shape: (B, num_features, hidden_dim)
 
         # ---- Transformer encoder ----
         x_embed = self.encoder(x_embed, attn_mask = nan_mask)  # shape: (B, num_features, hidden_dim)
 
         return x_embed
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor | List[torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor | List[torch.Tensor]:
         """Forward pass through the BERT model.
 
         Args:
-            x (torch.Tensor): Input tensor of shape (batch_size, seq_len).
+            inputs (torch.Tensor): Input tensor of shape (batch_size, seq_len).
 
         Returns:
             List of output tensors for each feature or output tensor of shape (batch_size, seq_len, hidden_dim).
         """
         # ---- Split categorical and continuous features ----
         if self.input_projection is not None:
-                x_embed, nan_mask = self.input_projection(x)  # shape: (B, num_features, hidden_dim), (B, num_features)
+                x_embed, nan_mask = self.input_projection(inputs)  # shape: (B, num_features, hidden_dim), (B, num_features)
         else:
-            x_embed = x
+            x_embed = inputs  # shape: (B, num_features, hidden_dim)
             nan_mask = None
 
         # ---- Add positional embeddings ----
-        x_embed = x_embed + self.position_embedding(x)  # shape: (B, num_features, hidden_dim)
+        x_embed = x_embed + self.position_embedding(x_embed)  # shape: (B, num_features, hidden_dim)
 
         # ---- Transformer encoder ----
         x_embed = self.encoder(x_embed, attn_mask = nan_mask)  # shape: (B, num_features, hidden_dim)

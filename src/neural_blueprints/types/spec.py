@@ -1,4 +1,5 @@
-from typing import Tuple, Union, Dict, Optional
+from typing import Any, Tuple, Union, Dict, Optional
+from pydantic import Field
 from typing_extensions import TypeAlias
 
 from .base import BaseType
@@ -7,7 +8,7 @@ TensorShape: TypeAlias = Tuple[int, ...]
 
 SpecValue: TypeAlias = Union[
     TensorShape,
-    Dict[str, "SpecValue"],
+    Dict[str, Any], # Should be SpecValue recursively
 ]
 
 UniModalInputSpec: TypeAlias = TensorShape
@@ -23,15 +24,11 @@ class MultiModalInputSpec(BaseType):
         }
     }
     """
-    # MultiModal Case
-    tabular: Optional[SpecValue] = None
-    image: Optional[SpecValue] = None
-    text: Optional[SpecValue] = None
-    audio: Optional[SpecValue] = None
-    representation: Optional[SpecValue] = None
-
-    # UniModal Case
-    inputs: Optional[TensorShape] = None
+    tabular: Optional[SpecValue] = Field(default=None)
+    image: Optional[SpecValue] = Field(default=None)
+    text: Optional[SpecValue] = Field(default=None)
+    audio: Optional[SpecValue] = Field(default=None)
+    representation: Optional[SpecValue] = Field(default=None)
 
 SingleOutputSpec: TypeAlias = TensorShape
 

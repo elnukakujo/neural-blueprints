@@ -45,6 +45,4 @@ class BaseArchitectureConfig(BaseModel, ABC):
         if self.activation is not None:
             self.input_projection.activation = self.activation if self.input_projection.activation is None else self.input_projection.activation
             self.output_projection.activation = self.activation if self.output_projection.activation is None else self.output_projection.activation
-        if self.output_dim is None:
-            self.output_dim = self.input_dim
         return self
