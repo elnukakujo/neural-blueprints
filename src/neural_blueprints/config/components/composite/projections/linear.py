@@ -1,8 +1,8 @@
-from pydantic import model_validator
+from typing import List
 
-from .base import BaseProjectionOutputConfig
+from .base import BaseProjectionConfig
 
-class LinearOutputProjectionConfig(BaseProjectionOutputConfig):
+class LinearProjectionConfig(BaseProjectionConfig):
     """
     Configuration for Linear Output Projection.
 
@@ -14,8 +14,5 @@ class LinearOutputProjectionConfig(BaseProjectionOutputConfig):
         normalization (Optional[str]): Normalization layer type. If None, no normalization is applied.
         dropout_p (Optional[float]): Dropout probability. If None, no dropout is applied.
     """
+    input_dim: List[int]
     output_dim: int
-
-    @model_validator(mode='after')
-    def _validate(self):
-        return self

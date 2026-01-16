@@ -8,7 +8,7 @@ from ...types import (
     SingleOutputSpec,
     MultiOutputSpec,
 )
-from ..components.composite.projections.input.base import BaseProjectionInputConfig
+from ..components.composite.projections.base import BaseProjectionInputConfig
 from ..components.composite.projections.output.base import BaseProjectionOutputConfig
 
 class BaseArchitectureConfig(BaseModel, ABC):
