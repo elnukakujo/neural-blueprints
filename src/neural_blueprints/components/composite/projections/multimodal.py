@@ -2,38 +2,44 @@ import torch
 import torch.nn as nn
 
 from . import (
-    BaseInputProjection,
-    LinearInputProjection,
-    TabularInputProjection
+    BaseProjection,
+    LinearProjection,
+    TabularProjection
 )
 
-from .....config.components.composite.projections.input import (
-    LinearInputProjectionConfig,
-    TabularInputProjectionConfig,
-    MultiModalInputProjectionConfig
+from ....config.components.composite.projections import (
+    LinearProjectionConfig,
+    TabularProjectionConfig,
+    MultiModalProjectionConfig
 )
 
-class MultiModalInputProjection(BaseInputProjection):
-    """
-    Multi-modal input projection.
-    """
+class MultiModalInputProjection(BaseProjection):
     def __init__(
             self,
-            config: MultiModalInputProjectionConfig
+            config: MultiModalProjectionConfig
         ):
         super().__init__()
 
         input_spec = config.input_spec
+        output_spec = config.output_spec
+
         self.input_dim = []
+
+        def get_output_dim(key=None):
+            if isinstance(output_spec, dict):
+                return output_spec.get(key, list(output_spec.values())[0])
+            else:
+                return output_spec
 
         if input_spec["tabular"] is not None:
             if isinstance(input_spec["tabular"], dict):
                 self.tabular_projection = nn.ModuleDict()
                 for key, cardinalities in input_spec["tabular"].items():
-                    self.tabular_projection[key] = TabularInputProjection(
-                        TabularInputProjectionConfig(
-                            cardinalities=cardinalities,
-                            latent_dim=config.latent_dim,
+                    output_dim = get_output_dim(key)
+                    self.tabular_projection[key] = TabularProjection(
+                        TabularProjectionConfig(
+                            input_cardinalities=cardinalities,
+                            output_dim=output_dim,
                             hidden_dims=config.hidden_dims,
                             activation=config.activation,
                             normalization=config.normalization,
@@ -42,10 +48,11 @@ class MultiModalInputProjection(BaseInputProjection):
                     )
                     self.input_dim.append([len(cardinalities)])
             elif isinstance(input_spec["tabular"], tuple):
-                self.tabular_projection = TabularInputProjection(
-                    TabularInputProjectionConfig(
-                        cardinalities=input_spec["tabular"],
-                        latent_dim=config.latent_dim,
+                output_dim = get_output_dim()
+                self.tabular_projection = TabularProjection(
+                    TabularProjectionConfig(
+                        input_cardinalities=input_spec["tabular"],
+                        output_dim=output_dim,
                         hidden_dims=config.hidden_dims,
                         activation=config.activation,
                         normalization=config.normalization,
@@ -63,10 +70,10 @@ class MultiModalInputProjection(BaseInputProjection):
                 self.representation_projection = nn.ModuleDict()
                 for key, input_dim in input_spec["representation"].items():
                     input_dim = list(input_dim)
-                    self.representation_projection[key] = LinearInputProjection(
-                        LinearInputProjectionConfig(
+                    self.representation_projection[key] = LinearProjection(
+                        LinearProjectionConfig(
                             input_dim=input_dim,
-                            latent_dim=config.latent_dim,
+                            output_dim=get_output_dim(key),
                             hidden_dims=config.hidden_dims,
                             activation=config.activation,
                             normalization=config.normalization,
@@ -75,10 +82,10 @@ class MultiModalInputProjection(BaseInputProjection):
                     )
                     self.input_dim.append(input_dim)
             elif isinstance(input_spec["representation"], tuple):
-                self.representation_projection = LinearInputProjection(
-                    LinearInputProjectionConfig(
+                self.representation_projection = LinearProjection(
+                    LinearProjectionConfig(
                         input_dim=input_spec["representation"],
-                        latent_dim=config.latent_dim,
+                        output_dim=get_output_dim(),
                         hidden_dims=config.hidden_dims,
                         activation=config.activation,
                         normalization=config.normalization,
@@ -92,7 +99,7 @@ class MultiModalInputProjection(BaseInputProjection):
             self.representation_projection = None
 
         self.input_dim = tuple(self.input_dim)
-        self.output_dim = [len(self.input_dim), config.latent_dim]
+        self.output_dim = output_spec
 
     def forward(self, inputs: dict[dict[str, torch.Tensor]]) -> torch.Tensor:
         """

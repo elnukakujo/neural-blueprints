@@ -105,29 +105,14 @@ class NumericalProjection(BaseProjection):
         is_masked = (x == -1).squeeze(-1)                   # shape (batch_size)
         return emb, is_masked
 
-class TabularProjection(BaseProjection):
+class TabularOutputProjection(BaseProjection):
     def __init__(self,
                  config: TabularProjectionConfig
                 ):
         super().__init__()
-        if config.input_cardinalities is not None:
-            tabular_2_linear = True
-            self.input_dim = [len(config.input_cardinalities)]
-            self.cardinalities = config.input_cardinalities
-        else:
-            tabular_2_linear = False
-            self.input_dim = config.input_dim
-
-        if config.output_cardinalities is not None:
-            linear_2_tabular = True
-            self.output_dim = [len(config.output_cardinalities)]
-            self.cardinalities = config.output_cardinalities
-        else:
-            linear_2_tabular = False
-            self.output_dim = config.output_dim
-
-        assert tabular_2_linear or linear_2_tabular, "Either input_cardinalities or output_cardinalities must be provided."
-        assert not (tabular_2_linear and linear_2_tabular), "Both input_cardinalities and output_cardinalities cannot be provided simultaneously."
+        self.input_dim = config.input_dim
+        self.output_dim = [len(config.output_cardinalities)]
+        self.cardinalities = config.output_cardinalities
 
         hidden_dims = config.hidden_dims
         dropout_p = config.dropout_p
@@ -137,44 +122,77 @@ class TabularProjection(BaseProjection):
         self.projections = nn.ModuleList([])
 
         for cardinality in self.cardinalities:
-            if tabular_2_linear:   # Input Projection
-                if cardinality>1:   # Discrete Scenario
-                    # Add to input projections (wrap in Sequential if multiple layers, otherwise just the embedding)
-                    self.projections.append(
-                        DiscreteProjection(
-                            cardinality=[cardinality],
-                            output_dim=self.output_dim,
-                            hidden_dims=hidden_dims,
-                            normalization=normalization,
-                            activation=activation,
-                            dropout_p=dropout_p
-                        )
-                    )
-                else:               # Continuous Scenario
-                    self.projections.append(
-                        NumericalProjection(
-                            output_dim=self.output_dim,
-                            hidden_dims=hidden_dims,
-                            normalization=normalization,
-                            activation=activation,
-                            dropout_p=dropout_p
-                        )
-                    )
-            elif linear_2_tabular:                   # Output Projection
-                self.projections.append(
-                    LinearProjection(
-                        LinearProjectionConfig(
-                            input_dim=config.output_dim,
-                            hidden_dims=hidden_dims,
-                            output_dim=[cardinality],
-                            normalization=normalization,
-                            activation=activation,
-                            dropout_p=dropout_p
-                        )
+            self.projections.append(
+                LinearProjection(
+                    LinearProjectionConfig(
+                        input_dim=config.input_dim,
+                        hidden_dims=hidden_dims,
+                        output_dim=[cardinality],
+                        normalization=normalization,
+                        activation=activation,
+                        dropout_p=dropout_p
                     )
                 )
-            else:
-                raise ValueError("Invalid configuration for TabularProjection.")
+            )
+
+    def forward(self, x: torch.Tensor) -> list[torch.Tensor]:
+        """Forward pass through the output projection module.
+
+        Args:
+            x: Input tensor of shape (batch_size, input_dim).
+
+        Returns:
+            Projected list of shape num_attributes*(batch_size, cardinality).
+        """
+
+        outputs = []
+
+        for i, layer in enumerate(self.projections):
+            emb = layer(x)                                   # shape (batch_size, cardinality)
+            outputs.append(emb)
+                
+        return outputs                                      # shape num_attributes*(batch_size, cardinality)
+
+class TabularInputProjection(BaseProjection):
+    def __init__(self,
+                 config: TabularProjectionConfig
+                ):
+        super().__init__()
+        self.input_dim = [len(config.input_cardinalities)]
+        self.output_dim = config.output_dim
+        
+        self.cardinalities = config.input_cardinalities
+
+        hidden_dims = config.hidden_dims
+        dropout_p = config.dropout_p
+        normalization = config.normalization
+        activation = config.activation
+
+        self.projections = nn.ModuleList([])
+
+        for cardinality in self.cardinalities:
+            if cardinality>1:   # Discrete Scenario
+                # Add to input projections (wrap in Sequential if multiple layers, otherwise just the embedding)
+                self.projections.append(
+                    DiscreteProjection(
+                        cardinality=[cardinality],
+                        output_dim=self.output_dim,
+                        hidden_dims=hidden_dims,
+                        normalization=normalization,
+                        activation=activation,
+                        dropout_p=dropout_p
+                    )
+                )
+            else:               # Continuous Scenario
+                self.projections.append(
+                    NumericalProjection(
+                        output_dim=self.output_dim,
+                        hidden_dims=hidden_dims,
+                        normalization=normalization,
+                        activation=activation,
+                        dropout_p=dropout_p
+                    )
+                )
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Forward pass through the input projection module.
@@ -190,7 +208,7 @@ class TabularProjection(BaseProjection):
         embeddings = []
         nan_mask = []
 
-        for i, layer in enumerate(self. projections):
+        for i, layer in enumerate(self.projections):
             col_data = x[:, i]
             emb, is_masked = layer(col_data)
             
@@ -202,3 +220,12 @@ class TabularProjection(BaseProjection):
         embeddings = embeddings.view(embeddings.size(0), *self.output_dim)  # shape (batch_size, *output_dim)
                 
         return embeddings, nan_mask # shape matches output_dim, (batch_size, num_attributes, 1)
+    
+class TabularProjection(BaseProjection):
+    def __new__(cls, config: TabularProjectionConfig):
+        if config.input_cardinalities:
+            return TabularInputProjection(config)
+        elif config.output_cardinalities:
+            return TabularOutputProjection(config)
+        else:
+            raise ValueError("Either input_cardinalities or output_cardinalities must be provided in the config.")

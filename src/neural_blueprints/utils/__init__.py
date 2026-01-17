@@ -8,7 +8,7 @@ from .metrics import accuracy, recall, f1_score
 from .criterion import mse, rmse, mae, cross_entropy, binary_cross_entropy, vae_loss, get_criterion
 from .optimizer import get_optimizer
 from .types import infer_types
-from .get_projection import get_input_projection, get_output_projection
+from .get_projection import get_projection
 from .inference import get_inference
 from .predict import get_predict
 
@@ -34,8 +34,7 @@ __all__ = [
     get_criterion,
     get_optimizer,
     infer_types,
-    get_input_projection,
-    get_output_projection,
+    get_projection,
     get_inference,
     get_predict,
 ]

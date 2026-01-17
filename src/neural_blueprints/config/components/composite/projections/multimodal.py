@@ -1,6 +1,13 @@
+from pydantic import model_validator
 from .base import BaseProjectionConfig
-from .....types import MultiModalInputSpec, MultiOutputSpec, SingleOutputSpec
+from .....types import UniModalSpec, MultiModalSpec
 
-class MultiModalInputProjectionConfig(BaseProjectionConfig):
-    input_spec: MultiModalInputSpec
-    output_spec: SingleOutputSpec | MultiOutputSpec
+class MultiModalProjectionConfig(BaseProjectionConfig):
+    input_spec: UniModalSpec | MultiModalSpec
+    output_spec: UniModalSpec | MultiModalSpec
+
+    @model_validator(mode="after")
+    def _validate(self):
+        if isinstance(self.input_spec, UniModalSpec) and isinstance(self.output_spec, UniModalSpec):
+            raise ValueError("For uni-modal specs, use the specific uni-modal projection config.")
+        return self

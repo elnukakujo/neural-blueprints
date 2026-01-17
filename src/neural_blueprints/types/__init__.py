@@ -2,10 +2,8 @@ from .base import BaseType
 from .modalities import Modalities
 from .sample import UniModalSample, MultiModalSample
 from .spec import (
-    UniModalInputSpec,
-    MultiModalInputSpec,
-    SingleOutputSpec,
-    MultiOutputSpec,
+    UniModalSpec,
+    MultiModalSpec
 )
 
 __all__ = [
@@ -13,8 +11,6 @@ __all__ = [
     Modalities,
     UniModalSample,
     MultiModalSample,
-    UniModalInputSpec,
-    MultiModalInputSpec,
-    SingleOutputSpec,
-    MultiOutputSpec,
+    UniModalSpec,
+    MultiModalSpec
 ]
