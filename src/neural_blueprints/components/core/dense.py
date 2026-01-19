@@ -21,8 +21,8 @@ class DenseLayer(BaseCore):
         self.input_dim = config.input_dim
         self.output_dim = config.output_dim
 
-        assert len(self.input_dim) == 1, "DenseLayer only supports 1D input dimensions."
-        assert len(self.output_dim) == 1, "DenseLayer only supports 1D output dimensions."
+        assert len(self.input_dim) == 1, f"DenseLayer only supports 1D input dimensions but got: {self.input_dim}."
+        assert len(self.output_dim) == 1, f"DenseLayer only supports 1D output dimensions but got: {self.output_dim}."
         
         linear_layer = nn.Linear(config.input_dim[0], config.output_dim[0])
         normalization_layer = NormalizationLayer(

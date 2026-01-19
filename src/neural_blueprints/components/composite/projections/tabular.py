@@ -28,13 +28,13 @@ class DiscreteProjection(BaseProjection):
             from ...core import EmbeddingLayer
             super().__init__()
             self.input_dim = cardinality
-            self.output_dim = output_dim
+            self.output_dim = [output_dim]
 
             # Determine dimensions for embedding layer
             if hidden_dims and len(hidden_dims) > 0:
                 embedding_dim = hidden_dims[0]
             else:
-                embedding_dim = output_dim
+                embedding_dim = output_dim[0]
 
             # Create embedding layer
             layers = [
@@ -111,6 +111,7 @@ class TabularOutputProjection(BaseProjection):
                 ):
         super().__init__()
         self.input_dim = config.input_dim
+        projection_dim = self.input_dim[-1]
         self.output_dim = [len(config.output_cardinalities)]
         self.cardinalities = config.output_cardinalities
 
@@ -125,9 +126,9 @@ class TabularOutputProjection(BaseProjection):
             self.projections.append(
                 LinearProjection(
                     LinearProjectionConfig(
-                        input_dim=config.input_dim,
+                        input_dim=[projection_dim],
                         hidden_dims=hidden_dims,
-                        output_dim=[cardinality],
+                        output_dim=[cardinality + 1 if cardinality > 1 else 1],
                         normalization=normalization,
                         activation=activation,
                         dropout_p=dropout_p
@@ -148,7 +149,11 @@ class TabularOutputProjection(BaseProjection):
         outputs = []
 
         for i, layer in enumerate(self.projections):
-            emb = layer(x)                                   # shape (batch_size, cardinality)
+            if x.dim() > 2:
+                col_data = x[:, i, :]                           # shape (batch_size, projection_dim)
+            else:
+                col_data = x
+            emb = layer(col_data)                               # shape (batch_size, cardinality)
             outputs.append(emb)
                 
         return outputs                                      # shape num_attributes*(batch_size, cardinality)
@@ -159,7 +164,8 @@ class TabularInputProjection(BaseProjection):
                 ):
         super().__init__()
         self.input_dim = [len(config.input_cardinalities)]
-        self.output_dim = config.output_dim
+        projection_dim = config.output_dim
+        self.output_dim = [len(config.input_cardinalities), projection_dim[0]]
         
         self.cardinalities = config.input_cardinalities
 
@@ -176,7 +182,7 @@ class TabularInputProjection(BaseProjection):
                 self.projections.append(
                     DiscreteProjection(
                         cardinality=[cardinality],
-                        output_dim=self.output_dim,
+                        output_dim=projection_dim,
                         hidden_dims=hidden_dims,
                         normalization=normalization,
                         activation=activation,
@@ -186,7 +192,7 @@ class TabularInputProjection(BaseProjection):
             else:               # Continuous Scenario
                 self.projections.append(
                     NumericalProjection(
-                        output_dim=self.output_dim,
+                        output_dim=projection_dim,
                         hidden_dims=hidden_dims,
                         normalization=normalization,
                         activation=activation,
@@ -219,7 +225,7 @@ class TabularInputProjection(BaseProjection):
 
         embeddings = embeddings.view(embeddings.size(0), *self.output_dim)  # shape (batch_size, *output_dim)
                 
-        return embeddings, nan_mask # shape matches output_dim, (batch_size, num_attributes, 1)
+        return embeddings # shape matches output_dim, (batch_size, num_attributes, 1)
     
 class TabularProjection(BaseProjection):
     def __new__(cls, config: TabularProjectionConfig):

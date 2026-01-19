@@ -3,14 +3,12 @@ import torch.nn as nn
 from typing import List
 
 from .base import EncoderArchitecture
-from ..components.composite.projections.input import TabularInputProjection
-from ..components.composite.projections.output import TabularOutputProjection
+from ..components.composite.projections import TabularProjection
 from ..components.composite import TransformerEncoder, TransformerDecoder, PositionEmbedding
 
 from ..config.architectures import TransformerConfig, BERTConfig
 from ..config.components.composite import TransformerEncoderConfig, PositionEmbeddingConfig
-from ..config.components.composite.projections.input import TabularInputProjectionConfig
-from ..config.components.composite.projections.output import TabularOutputProjectionConfig
+from ..config.components.composite.projections import TabularProjectionConfig
 
 import logging
 logger = logging.getLogger(__name__)
@@ -48,7 +46,7 @@ class BERT(EncoderArchitecture):
     def __init__(self,
             config: BERTConfig    
         ):
-        from ..utils import get_input_projection, get_output_projection
+        from ..utils import get_projection
         super().__init__()
         self.config = config
 
@@ -62,7 +60,7 @@ class BERT(EncoderArchitecture):
 
         # ---- Projections for discrete and continuous features ----
         if config.input_projection is not None:            
-            self.input_projection = get_input_projection(
+            self.input_projection = get_projection(
                 projection_config=config.input_projection,
             )
         elif isinstance(self.input_spec, tuple) and len(self.input_spec) == 2:
@@ -71,7 +69,6 @@ class BERT(EncoderArchitecture):
             raise ValueError("Input projection config must be provided for BERT when input_spec is not a 2D tensor shape.")
 
         input_dim = self.input_projection.output_dim if self.input_projection is not None else self.input_spec
-        print(input_dim)
 
         assert isinstance(input_dim, (tuple, list)) and len(input_dim) == 2 and isinstance(input_dim[0], int) and isinstance(input_dim[1], int), f"Input dimensions must be a tuple of two integers (num_features, latent_dim) but got: {input_dim}."
 
@@ -100,7 +97,7 @@ class BERT(EncoderArchitecture):
 
         # ---- Heads for masked attribute prediction ----
         if config.output_projection is not None:
-            self.output_projection = get_output_projection(
+            self.output_projection = get_projection(
                 projection_config=config.output_projection,
             )
         else:
@@ -116,13 +113,14 @@ class BERT(EncoderArchitecture):
             Encoded tensor of shape (batch_size, seq_len, hidden_dim).
         """
         # ---- Split categorical and continuous features ----
-        x_embed, nan_mask = self.input_projection(inputs)  # shape: (B, num_features, hidden_dim), (B, num_features)
+        x_embed = self.input_projection(inputs)  # shape: (B, num_features, hidden_dim), (B, num_features)
+        nan_mask = None
 
         # ---- Add positional embeddings ----
         x_embed = x_embed + self.position_embedding(inputs)  # shape: (B, num_features, hidden_dim)
 
         # ---- Transformer encoder ----
-        x_embed = self.encoder(x_embed, attn_mask = nan_mask)  # shape: (B, num_features, hidden_dim)
+        x_embed = self.encoder(x_embed, attn_mask=nan_mask)  # shape: (B, num_features, hidden_dim)
 
         return x_embed
 
@@ -137,10 +135,11 @@ class BERT(EncoderArchitecture):
         """
         # ---- Split categorical and continuous features ----
         if self.input_projection is not None:
-                x_embed, nan_mask = self.input_projection(inputs)  # shape: (B, num_features, hidden_dim), (B, num_features)
+                x_embed = self.input_projection(inputs)  # shape: (B, num_features, hidden_dim), (B, num_features)
         else:
             x_embed = inputs  # shape: (B, num_features, hidden_dim)
-            nan_mask = None
+        
+        nan_mask = None
 
         # ---- Add positional embeddings ----
         x_embed = x_embed + self.position_embedding(x_embed)  # shape: (B, num_features, hidden_dim)

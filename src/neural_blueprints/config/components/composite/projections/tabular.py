@@ -25,3 +25,5 @@ class TabularProjectionConfig(BaseProjectionConfig):
         
         if self.input_dim is not None and self.output_dim is not None:
             raise ValueError("Only one of 'input_dim' or 'output_dim' should be provided.")
+        
+        return self

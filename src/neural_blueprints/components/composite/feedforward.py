@@ -26,9 +26,10 @@ class FeedForwardNetwork(BaseComposite):
         layers = []
         in_dim = input_dim
         
-        for hidden_dim in hidden_dims:
-            layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=[hidden_dim], normalization=normalization, activation=activation, dropout_p=dropout_p)))
-            in_dim = [hidden_dim]
+        if hidden_dims:
+            for hidden_dim in hidden_dims:
+                layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=[hidden_dim], normalization=normalization, activation=activation, dropout_p=dropout_p)))
+                in_dim = [hidden_dim]
             
         layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=output_dim, normalization=None, activation=final_activation)))
         

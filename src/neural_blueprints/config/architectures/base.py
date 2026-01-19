@@ -3,13 +3,9 @@ from typing import Optional
 from abc import ABC
 
 from ...types import (
-    UniModalInputSpec,
-    MultiModalInputSpec,
-    SingleOutputSpec,
-    MultiOutputSpec,
+    ModalDim
 )
-from ..components.composite.projections.base import BaseProjectionInputConfig
-from ..components.composite.projections.output.base import BaseProjectionOutputConfig
+from ..components.composite.projections.base import BaseProjectionConfig
 
 class BaseArchitectureConfig(BaseModel, ABC):
     """Base configuration for neural architectures.
@@ -25,10 +21,10 @@ class BaseArchitectureConfig(BaseModel, ABC):
         - final_activation (Optional[str]): Final activation function to apply to the output.
     """
     
-    input_spec: UniModalInputSpec | MultiModalInputSpec
-    output_spec: SingleOutputSpec | MultiOutputSpec
-    input_projection: Optional[BaseProjectionInputConfig] = None
-    output_projection: Optional[BaseProjectionOutputConfig] = None
+    input_spec: ModalDim
+    output_spec: ModalDim
+    input_projection: Optional[BaseProjectionConfig] = None
+    output_projection: Optional[BaseProjectionConfig] = None
     dropout_p: Optional[float] = None
     normalization: Optional[str] = None
     activation: Optional[str] = None

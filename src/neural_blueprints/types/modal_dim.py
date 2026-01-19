@@ -13,9 +13,9 @@ SpecValue: TypeAlias = Union[
     Dict[str, Any], # Should be SpecValue recursively
 ]
 
-UniModalSpec: TypeAlias = TensorShape | CardinalitiesType
+UniModalDim: TypeAlias = TensorShape | CardinalitiesType
 
-class MultiModalSpec(BaseType, total=False):
+class MultiModalDim(BaseType, total=False):
     """
     Example:
     {
@@ -31,3 +31,5 @@ class MultiModalSpec(BaseType, total=False):
     text: Optional[SpecValue] = Field(default=None)
     audio: Optional[SpecValue] = Field(default=None)
     representation: Optional[SpecValue] = Field(default=None)
+
+ModalDim: TypeAlias = UniModalDim | MultiModalDim

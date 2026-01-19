@@ -1,3 +1,4 @@
+from .base import BaseArchitectureConfig
 from .mlp import MLPConfig
 from .cnn import CNNConfig
 from .rnn import RNNConfig
@@ -6,6 +7,7 @@ from .autoencoder import AutoEncoderConfig
 from .transformer import TransformerConfig, BERTConfig
 
 __all__ = [
+    BaseArchitectureConfig,
     MLPConfig,
     CNNConfig,
     RNNConfig,
