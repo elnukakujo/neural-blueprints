@@ -33,12 +33,18 @@ class BaseArchitectureConfig(BaseModel, ABC):
     @model_validator(mode='after')
     def _validate(self):
         if self.dropout_p is not None:
-            self.input_projection.dropout_p = self.dropout_p if self.input_projection.normalization is None else self.input_projection.dropout_p
-            self.output_projection.dropout_p = self.dropout_p if self.output_projection.normalization is None else self.output_projection.dropout_p
+            if self.input_projection:
+                self.input_projection.dropout_p = self.dropout_p if self.input_projection.normalization is None else self.input_projection.dropout_p
+            if self.output_projection:
+                self.output_projection.dropout_p = self.dropout_p if self.output_projection.normalization is None else self.output_projection.dropout_p
         if self.normalization is not None:
-            self.input_projection.normalization = self.normalization if self.input_projection.normalization is None else self.input_projection.normalization
-            self.output_projection.normalization = self.normalization if self.output_projection.normalization is None else self.output_projection.normalization
+            if self.input_projection:
+                self.input_projection.normalization = self.normalization if self.input_projection.normalization is None else self.input_projection.normalization
+            if self.output_projection:
+                self.output_projection.normalization = self.normalization if self.output_projection.normalization is None else self.output_projection.normalization
         if self.activation is not None:
-            self.input_projection.activation = self.activation if self.input_projection.activation is None else self.input_projection.activation
-            self.output_projection.activation = self.activation if self.output_projection.activation is None else self.output_projection.activation
+            if self.input_projection:
+                self.input_projection.activation = self.activation if self.input_projection.activation is None else self.input_projection.activation
+            if self.output_projection:
+                self.output_projection.activation = self.activation if self.output_projection.activation is None else self.output_projection.activation
         return self

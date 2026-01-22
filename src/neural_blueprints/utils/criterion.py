@@ -4,6 +4,9 @@ import torch.nn.functional as F
 
 from .device import get_device
 
+import logging
+logger = logging.getLogger(__name__)
+
 def get_criterion(metric_name: str) -> callable:
     """Returns the appropriate loss function based on the metric name.
     
@@ -154,6 +157,8 @@ def vae_loss(y_pred: list[torch.Tensor], y_true: torch.Tensor, mu: torch.Tensor,
 
     # KL divergence
     kl_loss = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+    if kl_loss < 1e-2:
+        logger.warning(f"KL divergence ({kl_loss.item()}) is very small, which may indicate a collapse in the latent space.")
 
     loss = recon_loss + kl_loss
 
