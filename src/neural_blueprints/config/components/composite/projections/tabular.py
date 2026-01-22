@@ -10,6 +10,8 @@ class TabularProjectionConfig(BaseProjectionConfig):
     input_dim: Optional[List[int]] = None
     output_dim: Optional[List[int]] = None
 
+    projection_dim: Optional[int] = None
+
     @model_validator(mode='after')
     def _validate(self):
         # Ensure at least one of input_cardinalities or output_cardinalities is provided, and that

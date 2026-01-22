@@ -23,6 +23,8 @@ def compute_loss(model_output, inputs: dict, y_true, criterion: Callable, mask, 
         assert isinstance(model_output, tuple) and len(model_output) == 3, \
             "VAE model output must be a tuple of (y_pred, mu, logvar)"
         y_pred, mu, logvar = model_output
+        if model_config.is_unsupervised:
+            y_true = inputs  # Use inputs as targets for unsupervised
         loss_kwargs = {'y_pred': y_pred, 'y_true': y_true, 'mu': mu, 'logvar': logvar}
     elif model_config.is_contrastive:
         y_pred = model_output

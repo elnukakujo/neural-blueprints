@@ -1,6 +1,10 @@
 from typing import List
 from pydantic import BaseModel
 
+from ..config.components.composite import (
+    EncoderConfig,
+    DecoderConfig,
+)
 from ..config.components.core import (
     ConvLayerConfig,
     DenseLayerConfig,
@@ -24,7 +28,9 @@ def infer_layer_type(config: BaseModel) -> str:
         DenseLayerConfig: 'dense',
         FlattenLayerConfig: 'flatten',
         ReshapeLayerConfig: 'reshape',
-        NormalizationLayerConfig: 'norm'
+        NormalizationLayerConfig: 'norm',
+        EncoderConfig: 'encoder',
+        DecoderConfig: 'decoder',
     }
         
     # Special case: check if it's a transposed convolution
@@ -41,5 +47,4 @@ def infer_layer_type(config: BaseModel) -> str:
         if config.in_channels > config.out_channels:
             layer_type += '_transpose'
         return layer_type
-    
     return type_mapping.get(type(config), 'unknown')

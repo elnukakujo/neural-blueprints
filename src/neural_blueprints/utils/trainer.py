@@ -109,7 +109,7 @@ class Trainer:
         if self.save_weights_path:
             torch.save(self.model.state_dict(), self.save_weights_path)
 
-    def predict(self, test_dataset: torch.utils.data.Dataset) -> torch.Tensor:
+    def predict(self, test_dataset: torch.utils.data.Dataset) -> dict:
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
         self.model.eval()
 

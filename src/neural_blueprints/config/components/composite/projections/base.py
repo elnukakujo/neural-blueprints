@@ -11,8 +11,10 @@ class BaseProjectionConfig(BaseModel, ABC):
         - dropout_p (Optional[float]): Dropout probability.
         - normalization (Optional[str]): Type of normalization to use.
         - activation (Optional[str]): Activation function to use.
+        - final_activation (Optional[str]): Final activation function to use.
     """
     hidden_dims: Optional[List[int]] = None
     dropout_p: Optional[float] = None
     normalization: Optional[str] = None
     activation: Optional[str] = None
+    final_activation: Optional[str] = None

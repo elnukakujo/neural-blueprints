@@ -30,7 +30,7 @@ def predict_reconstruction(
     test_loader: torch.utils.data.DataLoader
 ) -> dict[str, float]:
     """
-    Perform reconstruction using the provided model and data loader.
+    Perform reconstruction.
     Works with Sample dicts: UniModalSample and MultiModalSample.
     """
     model.eval()
@@ -38,23 +38,24 @@ def predict_reconstruction(
 
     # Extract inputs, labels, and mask
     X = batch["inputs"]
-    y = X
+
+    # For reconstruction tasks, use inputs as target if label is None
+    y = batch["label"] if "label" in list(batch.keys()) and batch["label"] is not None else X
+
     mask = batch.get("metadata", {}).get("mask") if batch.get("metadata") else None
 
     if mask is None:
         mask = torch.ones_like(y, dtype=torch.bool)
 
-    # For reconstruction tasks, use inputs as target if label is None
-    if y is None:
-        y = X
-
     with torch.no_grad():
         y_pred = model(X)
+        if hasattr(model, "type") and model.type == "vae":
+            y_pred = y_pred[0]  # VAE returns (y_pred, mu, logvar)
 
     dis_accuracy = [] 
     cont_accuracy = [] 
     for column_idx in range(X.size(1)): 
-        print(f"Feature Column {column_idx}:") 
+        print(f"Feature Column {column_idx}:")
         predicted_attributes = y_pred[column_idx] # shape: (batch_size, num_classes)
         targets = y[:, column_idx] # shape: (batch_size,)
         feature_mask = mask[:, column_idx] # shape: (batch_size,)

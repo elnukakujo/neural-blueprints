@@ -1,7 +1,6 @@
 import re
 import torch
 import torch.nn as nn
-import numpy as np
 
 from neural_blueprints.types.sample import MultiModalSample
 
@@ -18,12 +17,8 @@ from ....config.components.composite.projections import (
 )
 
 from ....types import (
-    UniModalDim,
-    MultiModalDim,
-    SingleProjectionDim,
     MultiProjectionDim,
-    MultiModalSample,
-    UniModalSample
+    MultiModalSample
 )
 
 def parse_index_spec(spec: str) -> list[int]:
@@ -170,19 +165,21 @@ class MultiModalInputProjection(BaseProjection):
         self.input_dim = modalities_dims
         self.output_dim = projection_dims
         
-    def forward(self, x: MultiModalSample) -> dict[str, torch.Tensor | dict[str, torch.Tensor]]:
+    def forward(self, x: MultiModalSample) -> tuple[dict[str, torch.Tensor | dict[str, torch.Tensor]], dict[str, torch.Tensor | dict[str, torch.Tensor]]]:
         """
         Forward pass for multi-modal input projection.
-        
         Args:
             x: MultiModalSample containing data for each modality
-        
         Returns:
-            Dictionary mapping modality types to:
-            - torch.Tensor for simple projections (no grouping)
-            - dict[str, torch.Tensor] for grouped projections (one tensor per group)
+            Tuple of two dictionaries:
+            - outputs: Dictionary mapping modality types to projected features
+            - nan_masks: Dictionary mapping modality types to nan masks (if applicable)
+            Each can contain:
+                - torch.Tensor for simple projections (no grouping)
+                - dict[str, torch.Tensor] for grouped projections (one tensor per group)
         """
         outputs = {}
+        nan_masks = {}
         
         for modality_type, modality_data in x.items():
             if modality_type not in self.projections:
@@ -193,6 +190,8 @@ class MultiModalInputProjection(BaseProjection):
             if isinstance(projection, nn.ModuleDict):
                 # Grouped projections - keep groups separate
                 outputs[modality_type] = {}
+                if modality_type == "tabular":
+                    nan_masks[modality_type] = {}
                 
                 for group_idx, group_projection in projection.items():
                     # Get the indices for this group from output_dim
@@ -210,14 +209,32 @@ class MultiModalInputProjection(BaseProjection):
                         # Data is a single tensor with features along a dimension
                         # Assume features are along dimension 1: [batch, num_features, ...]
                         group_features = [modality_data[:, idx] for idx in indices]
-
+                    
                     # Store this group's output separately
-                    outputs[modality_type][group_idx] = torch.stack([group_projection(feature) for feature in group_features], dim=1)            
+                    group_projections = []
+                    if modality_type == "tabular":
+                        group_nan_masks = []
+                    
+                    for feature in group_features:
+                        if modality_type == "tabular":
+                            feature_projection, nan_mask = group_projection(feature)
+                            group_projections.append(feature_projection)
+                            group_nan_masks.append(nan_mask)
+                        else:
+                            feature_projection = group_projection(feature)
+                            group_projections.append(feature_projection)
+                    
+                    outputs[modality_type][group_idx] = torch.stack(group_projections, dim=1)
+                    if modality_type == "tabular":
+                        nan_masks[modality_type][group_idx] = torch.cat(group_nan_masks, dim=1)
             else:
                 # Simple projection (no grouping)
-                outputs[modality_type] = projection(modality_data)
+                if modality_type == "tabular":
+                    outputs[modality_type], nan_masks[modality_type] = projection(modality_data)
+                else:
+                    outputs[modality_type] = projection(modality_data)
         
-        return outputs
+        return outputs, nan_masks
         
 class MultiModalOutputProjection(BaseProjection):
     def __init__(self, config: MultiModalProjectionConfig):

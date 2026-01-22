@@ -21,6 +21,7 @@ class LinearProjection(BaseProjection):
         activation = config.activation
         normalization = config.normalization
         dropout_p = config.dropout_p
+        final_activation = config.final_activation
         
         self.projection = FeedForwardNetwork(
             FeedForwardNetworkConfig(
@@ -29,7 +30,8 @@ class LinearProjection(BaseProjection):
                 output_dim=self.output_dim,
                 activation=activation,
                 normalization=normalization,
-                dropout_p=dropout_p
+                dropout_p=dropout_p,
+                final_activation=final_activation
             )
         )
 

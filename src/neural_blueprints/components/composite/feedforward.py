@@ -31,7 +31,7 @@ class FeedForwardNetwork(BaseComposite):
                 layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=[hidden_dim], normalization=normalization, activation=activation, dropout_p=dropout_p)))
                 in_dim = [hidden_dim]
             
-        layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=output_dim, normalization=None, activation=final_activation)))
+        layers.append(DenseLayer(DenseLayerConfig(input_dim=in_dim, output_dim=output_dim, normalization=None, dropout_p=None, activation=final_activation)))
         
         self.network = nn.Sequential(*layers)
         

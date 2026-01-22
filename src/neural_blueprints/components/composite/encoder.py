@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from .base import BaseComposite
 from ...config.components.composite import EncoderConfig, TransformerEncoderConfig
+from ...config.components.core import DenseLayerConfig
 from ...utils import get_block, get_activation
 
 import logging
@@ -17,26 +18,31 @@ class Encoder(BaseComposite):
     def __init__(self, config: EncoderConfig):
         super(Encoder, self).__init__()
 
-        self.input_dim = config.layer_configs[0].input_dim
-        self.output_dim = config.layer_configs[-1].output_dim
+        self.input_dim = config.layers_dim[0]
+        self.output_dim = config.latent_dim
 
-        self.layer_configs = config.layer_configs
-        self.final_activation = config.final_activation
-        self.normalization = config.normalization
-        self.activation = config.activation
-        self.dropout_p = config.dropout_p
-        self.final_activation = config.final_activation
+        layers_dim = config.layers_dim + [config.latent_dim]
+
+        normalization = config.normalization
+        activation = config.activation
+        dropout_p = config.dropout_p
+        final_activation = config.final_activation
 
         # Build the main generator body using the same modular layer system as Decoder
         layers = nn.ModuleList()
 
-        for layer_config in self.layer_configs:
-            layer_config.normalization = self.normalization if layer_config.normalization is None else layer_config.normalization
-            layer_config.activation = self.activation if layer_config.activation is None else layer_config.activation
-            layer_config.dropout_p = self.dropout_p if layer_config.dropout_p is None else layer_config.dropout_p
-            layers.append(get_block(layer_config))
+        for layer_idx in range(len(layers_dim)-1):
+            layers.append(get_block(
+                DenseLayerConfig(
+                    input_dim=[layers_dim[layer_idx]],
+                    output_dim=[layers_dim[layer_idx + 1]],
+                    normalization=normalization,
+                    activation=activation if layer_idx != len(layers_dim)-2 else None,
+                    dropout_p=dropout_p
+                )
+            ))
 
-        layers.append(get_activation(self.final_activation))
+        layers.append(get_activation(final_activation))
 
         self.network = nn.Sequential(*layers)
                 

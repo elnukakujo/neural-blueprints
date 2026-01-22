@@ -33,9 +33,9 @@ def get_criterion(metric_name: str) -> callable:
     
     if 'vae' in metric_name:
         def vae_loss(y_pred, y_true, mu, logvar):
-            recon_loss = base_loss(y_pred, y_true)
+            task_loss = base_loss(y_pred, y_true)
             kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-            return recon_loss + kl_div
+            return task_loss + kl_div
         return vae_loss
     else:
         return base_loss

@@ -3,6 +3,7 @@ from pydantic import model_validator
 from .base import BaseArchitectureConfig
 
 class MLPConfig(BaseArchitectureConfig):
+    hidden_dims: list[int]
     @model_validator(mode='after')
     def _validate(self):
         BaseArchitectureConfig._validate(self)

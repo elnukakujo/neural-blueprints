@@ -70,13 +70,11 @@ class MaskedTabularDataset(TabularDataset):
         else:
             # Randomly mask individual values across all samples and attributes
             gen = torch.Generator(device=device)
-            if os.getenv("RANDOM_SEED") is not None:
-                gen = gen.manual_seed(int(os.getenv("RANDOM_SEED")))
-            self.mask = torch.rand_like(
-                self.data,
-                generator=gen,
-                device=device
-            ) < mask_prob
+            seed = int(os.getenv("RANDOM_SEED")) if os.getenv("RANDOM_SEED") else torch.seed()
+            gen.manual_seed(seed)
+            self.mask = torch.rand(self.data.shape, device=device, generator=gen) < mask_prob
+            if self.mask.all():
+                logger.warning("All values are masked (mask is full of True). Consider lowering mask_prob.")
         
         self.labels = self.data.clone()
         

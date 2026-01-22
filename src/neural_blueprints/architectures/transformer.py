@@ -113,8 +113,11 @@ class BERT(EncoderArchitecture):
             Encoded tensor of shape (batch_size, seq_len, hidden_dim).
         """
         # ---- Split categorical and continuous features ----
-        x_embed = self.input_projection(inputs)  # shape: (B, num_features, hidden_dim), (B, num_features)
-        nan_mask = None
+        if self.input_projection is not None:
+                x_embed, nan_mask = self.input_projection(inputs)  # shape: (B, num_features, hidden_dim), (B, num_features)
+        else:
+            x_embed = inputs  # shape: (B, num_features, hidden_dim)
+            nan_mask = None
 
         # ---- Add positional embeddings ----
         x_embed = x_embed + self.position_embedding(inputs)  # shape: (B, num_features, hidden_dim)
@@ -135,11 +138,10 @@ class BERT(EncoderArchitecture):
         """
         # ---- Split categorical and continuous features ----
         if self.input_projection is not None:
-                x_embed = self.input_projection(inputs)  # shape: (B, num_features, hidden_dim), (B, num_features)
+                x_embed, nan_mask = self.input_projection(inputs)  # shape: (B, num_features, hidden_dim), (B, num_features)
         else:
             x_embed = inputs  # shape: (B, num_features, hidden_dim)
-        
-        nan_mask = None
+            nan_mask = None
 
         # ---- Add positional embeddings ----
         x_embed = x_embed + self.position_embedding(x_embed)  # shape: (B, num_features, hidden_dim)

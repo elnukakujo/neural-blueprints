@@ -21,7 +21,8 @@ class DiscreteProjection(BaseProjection):
             hidden_dims: list[int] = None,
             activation: str = None,
             normalization: str = None,
-            dropout_p: float = 0.0
+            dropout_p: float = 0.0,
+            final_activation: str = None
         ):
             from .. import FeedForwardNetwork
             from ...composite import FeedForwardNetwork
@@ -60,7 +61,7 @@ class DiscreteProjection(BaseProjection):
                             normalization=normalization,
                             activation=activation,
                             dropout_p=dropout_p,
-                            final_activation=activation
+                            final_activation=final_activation
                         )
                     )
                 )
@@ -80,7 +81,8 @@ class NumericalProjection(BaseProjection):
             hidden_dims: list[int] = None,
             activation: str = None,
             normalization: str = None,
-            dropout_p: float = 0.0
+            dropout_p: float = 0.0,
+            final_activation: str = None
         ):
             super().__init__()
             self.input_dim = [1]
@@ -93,7 +95,8 @@ class NumericalProjection(BaseProjection):
                     output_dim=self.output_dim,
                     normalization=normalization,
                     activation=activation,
-                    dropout_p=dropout_p
+                    dropout_p=dropout_p,
+                    final_activation=final_activation
                 )
             )
 
@@ -105,67 +108,14 @@ class NumericalProjection(BaseProjection):
         is_masked = (x == -1).squeeze(-1)                   # shape (batch_size)
         return emb, is_masked
 
-class TabularOutputProjection(BaseProjection):
-    def __init__(self,
-                 config: TabularProjectionConfig
-                ):
-        super().__init__()
-        self.input_dim = config.input_dim
-        projection_dim = self.input_dim[-1]
-        self.output_dim = [len(config.output_cardinalities)]
-        self.cardinalities = config.output_cardinalities
-
-        hidden_dims = config.hidden_dims
-        dropout_p = config.dropout_p
-        normalization = config.normalization
-        activation = config.activation
-
-        self.projections = nn.ModuleList([])
-
-        for cardinality in self.cardinalities:
-            self.projections.append(
-                LinearProjection(
-                    LinearProjectionConfig(
-                        input_dim=[projection_dim],
-                        hidden_dims=hidden_dims,
-                        output_dim=[cardinality + 1 if cardinality > 1 else 1],
-                        normalization=normalization,
-                        activation=activation,
-                        dropout_p=dropout_p
-                    )
-                )
-            )
-
-    def forward(self, x: torch.Tensor) -> list[torch.Tensor]:
-        """Forward pass through the output projection module.
-
-        Args:
-            x: Input tensor of shape (batch_size, input_dim).
-
-        Returns:
-            Projected list of shape num_attributes*(batch_size, cardinality).
-        """
-
-        outputs = []
-
-        for i, layer in enumerate(self.projections):
-            if x.dim() > 2:
-                col_data = x[:, i, :]                           # shape (batch_size, projection_dim)
-            else:
-                col_data = x
-            emb = layer(col_data)                               # shape (batch_size, cardinality)
-            outputs.append(emb)
-                
-        return outputs                                      # shape num_attributes*(batch_size, cardinality)
-
 class TabularInputProjection(BaseProjection):
     def __init__(self,
                  config: TabularProjectionConfig
                 ):
         super().__init__()
         self.input_dim = [len(config.input_cardinalities)]
-        projection_dim = config.output_dim
-        self.output_dim = [len(config.input_cardinalities), projection_dim[0]]
+        projection_dim = [config.projection_dim] if config.projection_dim else [config.output_dim[-1]]
+        self.output_dim = config.output_dim
         
         self.cardinalities = config.input_cardinalities
 
@@ -173,6 +123,7 @@ class TabularInputProjection(BaseProjection):
         dropout_p = config.dropout_p
         normalization = config.normalization
         activation = config.activation
+        final_activation = config.final_activation
 
         self.projections = nn.ModuleList([])
 
@@ -186,7 +137,8 @@ class TabularInputProjection(BaseProjection):
                         hidden_dims=hidden_dims,
                         normalization=normalization,
                         activation=activation,
-                        dropout_p=dropout_p
+                        dropout_p=dropout_p,
+                        final_activation=final_activation
                     )
                 )
             else:               # Continuous Scenario
@@ -196,7 +148,8 @@ class TabularInputProjection(BaseProjection):
                         hidden_dims=hidden_dims,
                         normalization=normalization,
                         activation=activation,
-                        dropout_p=dropout_p
+                        dropout_p=dropout_p,
+                        final_activation=final_activation
                     )
                 )
 
@@ -220,12 +173,70 @@ class TabularInputProjection(BaseProjection):
             
             embeddings.append(emb)
             nan_mask.append(is_masked)                          # shape (batch_size)
-        embeddings = torch.stack(embeddings, dim=1)             # shape (batch_size, num_attributes, output_dim)
+        embeddings = torch.stack(embeddings, dim=1)             # shape (batch_size, num_attributes, projection_dim)
         nan_mask = torch.stack(nan_mask, dim=1).bool()          # shape (batch_size, num_attributes)
 
         embeddings = embeddings.view(embeddings.size(0), *self.output_dim)  # shape (batch_size, *output_dim)
                 
-        return embeddings # shape matches output_dim, (batch_size, num_attributes, 1)
+        return embeddings, nan_mask
+    
+class TabularOutputProjection(BaseProjection):
+    def __init__(self,
+                 config: TabularProjectionConfig
+                ):
+        super().__init__()
+        self.input_dim = config.input_dim
+        projection_dim = self.input_dim[-1]
+        self.output_dim = [len(config.output_cardinalities)]
+        self.cardinalities = config.output_cardinalities
+
+        hidden_dims = config.hidden_dims
+        dropout_p = config.dropout_p
+        normalization = config.normalization
+        activation = config.activation
+        final_activation = config.final_activation if config.final_activation else "sigmoid"
+
+        self.projections = nn.ModuleList([])
+
+        for cardinality in self.cardinalities:
+            self.projections.append(
+                LinearProjection(
+                    LinearProjectionConfig(
+                        input_dim=[projection_dim],
+                        hidden_dims=hidden_dims,
+                        output_dim=[cardinality + 1 if cardinality > 1 else 1],
+                        normalization=normalization,
+                        activation=activation,
+                        dropout_p=dropout_p,
+                        final_activation=final_activation
+                    )
+                )
+            )
+
+    def forward(self, x: torch.Tensor) -> list[torch.Tensor]:
+        """Forward pass through the output projection module.
+
+        Args:
+            x: Input tensor of shape (batch_size, input_dim).
+
+        Returns:
+            Projected list of shape num_attributes*(batch_size, cardinality).
+        """
+        x = x.view(x.size(0), *self.input_dim)          # shape (batch_size, input_dim)
+        outputs = []
+
+        for i, layer in enumerate(self.projections):
+            if x.dim() > 2:
+                col_data = x[:, i, :]                           # shape (batch_size, projection_dim)
+            else:
+                col_data = x
+            emb = layer(col_data)                               # shape (batch_size, cardinality)
+            outputs.append(emb)
+        
+        if len(outputs) == 1:
+            return outputs[0]                                   # shape (batch_size, cardinality)
+
+        return outputs                                      # shape num_attributes*(batch_size, cardinality)
     
 class TabularProjection(BaseProjection):
     def __new__(cls, config: TabularProjectionConfig):
